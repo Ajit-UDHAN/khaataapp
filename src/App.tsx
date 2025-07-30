@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AppProvider } from './contexts/AppContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import LoginScreen from './components/LoginScreen';
+import BusinessProfileSetup from './components/BusinessProfileSetup';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import ProductManager from './components/ProductManager';
@@ -8,10 +11,31 @@ import InvoiceManager from './components/InvoiceManager';
 import CustomerManager from './components/CustomerManager';
 import Reports from './components/Reports';
 import ExpenseManager from './components/ExpenseManager';
+import Settings from './components/Settings';
 import { sampleProducts, sampleCustomers, sampleInvoices, sampleExpenses, sampleExpenseCategories } from './utils/sampleData';
 
-function App() {
+const AppContent: React.FC = () => {
+  const { user, businessProfile, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState('dashboard');
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginScreen />;
+  }
+
+  if (!businessProfile) {
+    return <BusinessProfileSetup />;
+  }
 
   // Initialize with sample data if localStorage is empty
   useEffect(() => {
@@ -49,6 +73,8 @@ function App() {
         return <Reports />;
       case 'expenses':
         return <ExpenseManager />;
+      case 'settings':
+        return <Settings />;
       default:
         return <Dashboard onViewChange={setCurrentView} />;
     }
@@ -60,6 +86,14 @@ function App() {
         {renderCurrentView()}
       </Layout>
     </AppProvider>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

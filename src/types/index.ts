@@ -121,3 +121,23 @@ export interface DateRange {
   endDate: string;
   label: string;
 }
+
+export interface User {
+  id: string;
+  email: string;
+  phone?: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface BusinessProfile {
+  id: string;
+  userId: string;
+  shopName: string;
+  gstNumber?: string;
+  businessAddress: string;
+  contactNumber: string;
+  shopLogo?: string;
+  createdAt: string;
+  updatedAt: string;
+}

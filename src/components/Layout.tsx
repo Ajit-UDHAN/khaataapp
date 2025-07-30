@@ -9,8 +9,11 @@ import {
   X,
   ShoppingCart,
   Plus,
-  CreditCard
+  CreditCard,
+  Settings,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -20,6 +23,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, businessProfile, logout } = useAuth();
 
   const navigation = [
     { id: 'dashboard', name: 'Dashboard', icon: Home },
@@ -29,6 +33,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
     { id: 'customers', name: 'Customers', icon: Users },
     { id: 'expenses', name: 'Expenses', icon: CreditCard },
     { id: 'reports', name: 'Reports', icon: BarChart3 },
+    { id: 'settings', name: 'Settings', icon: Settings },
   ];
 
   const quickActions = [
@@ -49,17 +54,17 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl border-r border-gray-100 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+        fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-xl border-r border-gray-100 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="flex items-center justify-between h-20 px-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+        <div className="flex items-center justify-between h-20 px-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <div>
-            <h1 className="text-xl font-bold">ShopManager Pro</h1>
-            <p className="text-xs text-blue-100">Business Management</p>
+            <h1 className="text-xl font-bold">{businessProfile?.shopName || 'ShopManager Pro'}</h1>
+            <p className="text-xs text-blue-100">{user?.name || 'Business Management'}</p>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+            className="lg:hidden p-2 rounded-lg hover:bg-blue-700/50 transition-colors duration-200"
           >
             <X className="w-5 h-5" />
           </button>
@@ -92,7 +97,30 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
           })}
         </nav>
 
-        <div className="absolute bottom-6 left-4 right-4">
+        <div className="absolute bottom-6 left-4 right-4 space-y-4">
+          {/* User Profile */}
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                  {user?.name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
+                  <p className="text-xs text-gray-600">{user?.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={logout}
+                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
             <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
               <Plus className="w-4 h-4 mr-2" />
@@ -134,8 +162,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
             <Menu className="w-6 h-6" />
           </button>
           <div className="text-center">
-            <h1 className="text-lg font-bold text-gray-900">ShopManager Pro</h1>
-            <p className="text-xs text-gray-500">Business Management</p>
+            <h1 className="text-lg font-bold text-gray-900">{businessProfile?.shopName || 'ShopManager Pro'}</h1>
+            <p className="text-xs text-gray-500">{user?.name || 'Business Management'}</p>
           </div>
           <div className="w-10" /> {/* Spacer */}
         </header>
