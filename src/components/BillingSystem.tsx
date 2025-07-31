@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, User, Phone, MapPin, Share2, Printer, Save } from 'lucide-react';
-import { useAppContext } from '../contexts/AppContext';
+import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Invoice, InvoiceItem, Customer, Product } from '../types';
 
 export default function BillingSystem() {
-  const { products, customers, addInvoice, addCustomer, businessProfile } = useAppContext();
+  const { products, customers, setInvoices, setCustomers, businessProfile } = useApp();
   const { user } = useAuth();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerSearch, setCustomerSearch] = useState('');
@@ -86,7 +86,7 @@ export default function BillingSystem() {
         creditBalance: 0,
         lastPurchase: new Date().toISOString()
       };
-      addCustomer(customer);
+      setCustomers(prev => [...prev, customer]);
       setSelectedCustomer(customer);
       setCustomerSearch(customer.name);
       setShowCustomerForm(false);
@@ -114,7 +114,7 @@ export default function BillingSystem() {
       invoiceNumber: `INV-${Date.now().toString().slice(-6)}`
     };
 
-    addInvoice(invoice);
+    setInvoices(prev => [...prev, invoice]);
     
     // Reset form
     setItems([]);
