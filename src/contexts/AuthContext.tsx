@@ -76,27 +76,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const loginWithPhone = async (phone: string, otp: string) => {
     setIsLoading(true);
     try {
-      // Simulate OTP verification - replace with actual authentication
-      const mockUser: User = {
-        id: Date.now().toString(),
-        email: `${phone}@phone.local`,
-        phone,
-        name: `User ${phone.slice(-4)}`,
-        createdAt: new Date().toISOString()
-      };
+      // TODO: Replace with real OTP verification service
+      // Example implementations:
       
-      setUser(mockUser);
-      localStorage.setItem('currentUser', JSON.stringify(mockUser));
+      // Firebase Auth:
+      // const confirmationResult = await signInWithPhoneNumber(auth, phone, recaptchaVerifier);
+      // const result = await confirmationResult.confirm(otp);
       
-      // Check for existing business profile
-      const existingProfile = localStorage.getItem(`businessProfile_${mockUser.id}`);
-      if (existingProfile) {
-        const profile = JSON.parse(existingProfile);
-        setBusinessProfile(profile);
-        localStorage.setItem('businessProfile', JSON.stringify(profile));
-      }
+      // Twilio/MSG91 API:
+      // const response = await fetch('/api/verify-otp', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ phone, otp })
+      // });
+      
+      throw new Error('OTP verification not implemented. Please integrate with Firebase Auth, Twilio, MSG91, or AWS SNS for production use.');
     } catch (error) {
-      throw new Error('Phone login failed');
+      throw new Error(error instanceof Error ? error.message : 'Phone login failed');
     } finally {
       setIsLoading(false);
     }

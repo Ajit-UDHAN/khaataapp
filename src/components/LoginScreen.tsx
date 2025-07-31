@@ -30,8 +30,17 @@ const LoginScreen: React.FC = () => {
     setError('');
     
     if (!otpSent) {
-      // Simulate sending OTP
-      setOtpSent(true);
+      // TODO: Implement real OTP sending
+      // Example with Firebase:
+      // try {
+      //   const confirmationResult = await signInWithPhoneNumber(auth, formData.phone, recaptchaVerifier);
+      //   setConfirmationResult(confirmationResult);
+      //   setOtpSent(true);
+      // } catch (error) {
+      //   setError('Failed to send OTP. Please try again.');
+      // }
+      
+      setError('OTP service not configured. Please use email login or contact administrator to set up SMS service.');
       return;
     }
     
@@ -211,9 +220,9 @@ const LoginScreen: React.FC = () => {
 
           {/* Demo Credentials */}
           <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-sm text-blue-800 font-medium mb-2">Demo Credentials:</p>
+            <p className="text-sm text-blue-800 font-medium mb-2">For Testing:</p>
             <p className="text-xs text-blue-600">Email: demo@shop.com | Password: demo123</p>
-            <p className="text-xs text-blue-600">Phone: +91 98765 43210 | OTP: 123456</p>
+            <p className="text-xs text-red-600 mt-2">⚠️ Phone OTP requires SMS service setup</p>
           </div>
         </div>
 
