@@ -18,25 +18,6 @@ const AppContent: React.FC = () => {
   const { user, businessProfile, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState('dashboard');
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <LoginScreen />;
-  }
-
-  if (!businessProfile) {
-    return <BusinessProfileSetup />;
-  }
-
   // Initialize with sample data if localStorage is empty
   useEffect(() => {
     if (!localStorage.getItem('products')) {
@@ -55,6 +36,25 @@ const AppContent: React.FC = () => {
       localStorage.setItem('expenseCategories', JSON.stringify(sampleExpenseCategories));
     }
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginScreen />;
+  }
+
+  if (!businessProfile) {
+    return <BusinessProfileSetup />;
+  }
 
   const renderCurrentView = () => {
     switch (currentView) {
