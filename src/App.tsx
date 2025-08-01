@@ -18,24 +18,15 @@ const AppContent: React.FC = () => {
   const { user, businessProfile, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState('dashboard');
 
-  // Initialize with sample data if localStorage is empty
+  // Initialize expense categories if they don't exist
   useEffect(() => {
-    if (!localStorage.getItem('products')) {
-      localStorage.setItem('products', JSON.stringify(sampleProducts));
+    if (user) {
+      const userExpenseCategoriesKey = `${user.id}_expenseCategories`;
+      if (!localStorage.getItem(userExpenseCategoriesKey)) {
+        localStorage.setItem(userExpenseCategoriesKey, JSON.stringify(sampleExpenseCategories));
+      }
     }
-    if (!localStorage.getItem('customers')) {
-      localStorage.setItem('customers', JSON.stringify(sampleCustomers));
-    }
-    if (!localStorage.getItem('invoices')) {
-      localStorage.setItem('invoices', JSON.stringify(sampleInvoices));
-    }
-    if (!localStorage.getItem('expenses')) {
-      localStorage.setItem('expenses', JSON.stringify(sampleExpenses));
-    }
-    if (!localStorage.getItem('expenseCategories')) {
-      localStorage.setItem('expenseCategories', JSON.stringify(sampleExpenseCategories));
-    }
-  }, []);
+  }, [user]);
 
   if (isLoading) {
     return (

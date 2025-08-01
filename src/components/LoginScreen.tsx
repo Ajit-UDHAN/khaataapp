@@ -220,9 +220,9 @@ const LoginScreen: React.FC = () => {
 
           {/* Demo Credentials */}
           <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-sm text-blue-800 font-medium mb-2">For Testing:</p>
-            <p className="text-xs text-blue-600">Email: demo@shop.com | Password: demo123</p>
-            <p className="text-xs text-red-600 mt-2">⚠️ Phone OTP requires SMS service setup</p>
+            <p className="text-sm text-blue-800 font-medium mb-2">Getting Started:</p>
+            <p className="text-xs text-blue-600">Create an account with any email and password</p>
+            <p className="text-xs text-red-600 mt-2">⚠️ Phone OTP requires SMS service setup (see README)</p>
           </div>
         </div>
 

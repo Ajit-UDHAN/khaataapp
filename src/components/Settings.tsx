@@ -27,12 +27,15 @@ const Settings: React.FC = () => {
   ];
 
   const exportData = () => {
+    if (!user) return;
+    
     const data = {
-      products: JSON.parse(localStorage.getItem('products') || '[]'),
-      customers: JSON.parse(localStorage.getItem('customers') || '[]'),
-      invoices: JSON.parse(localStorage.getItem('invoices') || '[]'),
-      expenses: JSON.parse(localStorage.getItem('expenses') || '[]'),
+      products: JSON.parse(localStorage.getItem(`${user.id}_products`) || '[]'),
+      customers: JSON.parse(localStorage.getItem(`${user.id}_customers`) || '[]'),
+      invoices: JSON.parse(localStorage.getItem(`${user.id}_invoices`) || '[]'),
+      expenses: JSON.parse(localStorage.getItem(`${user.id}_expenses`) || '[]'),
       businessProfile: businessProfile,
+      userId: user.id,
       exportDate: new Date().toISOString()
     };
 
@@ -46,6 +49,8 @@ const Settings: React.FC = () => {
   };
 
   const importData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user) return;
+    
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -54,11 +59,18 @@ const Settings: React.FC = () => {
       try {
         const data = JSON.parse(e.target?.result as string);
         
+        // Verify the data belongs to the current user or ask for confirmation
+        if (data.userId && data.userId !== user.id) {
+          if (!confirm('This backup is from a different user account. Import anyway?')) {
+            return;
+          }
+        }
+        
         if (confirm('This will replace all your current data. Are you sure?')) {
-          if (data.products) localStorage.setItem('products', JSON.stringify(data.products));
-          if (data.customers) localStorage.setItem('customers', JSON.stringify(data.customers));
-          if (data.invoices) localStorage.setItem('invoices', JSON.stringify(data.invoices));
-          if (data.expenses) localStorage.setItem('expenses', JSON.stringify(data.expenses));
+          if (data.products) localStorage.setItem(`${user.id}_products`, JSON.stringify(data.products));
+          if (data.customers) localStorage.setItem(`${user.id}_customers`, JSON.stringify(data.customers));
+          if (data.invoices) localStorage.setItem(`${user.id}_invoices`, JSON.stringify(data.invoices));
+          if (data.expenses) localStorage.setItem(`${user.id}_expenses`, JSON.stringify(data.expenses));
           
           alert('Data imported successfully! Please refresh the page.');
           window.location.reload();
@@ -71,11 +83,22 @@ const Settings: React.FC = () => {
   };
 
   const clearAllData = () => {
+    if (!user) return;
+    
     if (confirm('This will permanently delete all your data. This action cannot be undone. Are you sure?')) {
       if (confirm('Are you absolutely sure? This will delete all products, customers, invoices, and expenses.')) {
-        localStorage.clear();
-        alert('All data has been cleared. You will be logged out.');
-        logout();
+        // Clear only current user's data
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(`${user.id}_`)) {
+            keysToRemove.push(key);
+          }
+        }
+        
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        alert('All your data has been cleared. Please refresh the page.');
+        window.location.reload();
       }
     }
   };

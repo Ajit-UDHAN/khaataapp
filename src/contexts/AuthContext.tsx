@@ -48,11 +48,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call - replace with actual authentication
+      // TODO: Replace with actual authentication service
+      // For now, create user based on email
       const mockUser: User = {
-        id: Date.now().toString(),
+        id: btoa(email).replace(/[^a-zA-Z0-9]/g, ''), // Create consistent ID from email
         email,
-        name: email.split('@')[0],
+        name: email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1),
         createdAt: new Date().toISOString()
       };
       
@@ -60,11 +61,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('currentUser', JSON.stringify(mockUser));
       
       // Check for existing business profile
-      const existingProfile = localStorage.getItem(`businessProfile_${mockUser.id}`);
+      const existingProfile = localStorage.getItem(`${mockUser.id}_businessProfile`);
       if (existingProfile) {
         const profile = JSON.parse(existingProfile);
         setBusinessProfile(profile);
-        localStorage.setItem('businessProfile', JSON.stringify(profile));
       }
     } catch (error) {
       throw new Error('Login failed');
@@ -102,9 +102,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
     setBusinessProfile(null);
     localStorage.removeItem('currentUser');
-    localStorage.removeItem('businessProfile');
-    // Clear all user-specific data
-    localStorage.clear();
+    // Note: User-specific data remains in localStorage with user ID prefix
+    // This allows users to log back in and see their data
   };
 
   const updateBusinessProfile = (profileData: Omit<BusinessProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
@@ -119,8 +118,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
     
     setBusinessProfile(profile);
-    localStorage.setItem('businessProfile', JSON.stringify(profile));
-    localStorage.setItem(`businessProfile_${user.id}`, JSON.stringify(profile));
+    localStorage.setItem(`${user.id}_businessProfile`, JSON.stringify(profile));
   };
 
   return (
