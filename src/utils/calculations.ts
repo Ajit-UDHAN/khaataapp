@@ -146,12 +146,13 @@ export const formatNumber = (num: number): string => {
 };
 
 export const generateInvoiceNumber = (invoices: Invoice[]): string => {
-  const year = new Date().getFullYear();
   const existingNumbers = invoices
-    .filter(inv => inv.invoiceNumber.includes(year.toString()))
-    .map(inv => parseInt(inv.invoiceNumber.split('-').pop() || '0'))
+    .map(inv => {
+      const match = inv.invoiceNumber.match(/INV-(\d+)/);
+      return match ? parseInt(match[1]) : 0;
+    })
     .sort((a, b) => b - a);
   
   const nextNumber = existingNumbers.length > 0 ? existingNumbers[0] + 1 : 1;
-  return `INV-${year}-${nextNumber.toString().padStart(3, '0')}`;
+  return `INV-${nextNumber.toString().padStart(4, '0')}`;
 };
