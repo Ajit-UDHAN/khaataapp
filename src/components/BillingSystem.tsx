@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, User, Phone, MapPin, Share2, Printer, Save, Search, Receipt } from 'lucide-react';
+import { Plus, Trash2, User, Phone, MapPin, Share2, Printer, Save, Search, Receipt, Percent, Calculator } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Invoice, InvoiceItem, Customer, Product, ProductVariant } from '../types';
@@ -18,6 +18,10 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'upi' | 'online' | 'credit'>('cash');
   const [amountPaid, setAmountPaid] = useState(0);
+  const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('percentage');
+  const [discountValue, setDiscountValue] = useState(0);
+  const [enableGST, setEnableGST] = useState(false);
+  const [gstRate, setGstRate] = useState(18);
   const [notes, setNotes] = useState('');
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [productSearch, setProductSearch] = useState('');
@@ -53,7 +57,6 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
     setItems([...items, {
       productId: '',
       variantId: '',
-      productId: '',
       productName: '',
       packSize: '',
       quantity: 1,
@@ -94,7 +97,14 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
   };
 
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-  const tax = subtotal * 0.18; // 18% GST
+  
+  // Calculate discount
+  const totalDiscount = discountType === 'percentage' 
+    ? (subtotal * discountValue) / 100 
+    : discountValue;
+  
+  const discountedSubtotal = subtotal - totalDiscount;
+  const tax = enableGST ? (discountedSubtotal * gstRate) / 100 : 0;
   const grandTotal = subtotal + tax;
   const balanceDue = grandTotal - amountPaid;
 
@@ -131,6 +141,7 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
       items,
       subtotal,
       tax,
+      discount: totalDiscount,
       total: grandTotal,
       amountPaid,
       balanceDue,
@@ -147,6 +158,7 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
     setSelectedCustomer(null);
     setCustomerSearch('');
     setAmountPaid(0);
+    setDiscountValue(0);
     setNotes('');
     setProductSearch('');
     
@@ -184,10 +196,11 @@ ${items.map(item =>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Subtotal: ${formatCurrency(subtotal)}
-Tax (18%): ${formatCurrency(tax)}
+${totalDiscount > 0 ? `Discount: -${formatCurrency(totalDiscount)}\n` : ''}
+${enableGST ? `Tax (${gstRate}%): ${formatCurrency(tax)}\n` : ''}
 *Total: ${formatCurrency(grandTotal)}*
 
-Payment: ${paymentType.toUpperCase()}
+Payment: ${paymentMethod.toUpperCase()}
 Paid: ${formatCurrency(amountPaid)}
 ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
 
@@ -339,7 +352,7 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
                         <select
                           value={item.variantId}
                           onChange={(e) => updateItem(index, 'variantId', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           <option value="">Select Product</option>
                           {filteredProducts.map(variant => (
@@ -357,7 +370,7 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
                           min="1"
                           value={item.quantity}
                           onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
                       <div>
@@ -369,7 +382,7 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
                           step="0.01"
                           value={item.rate}
                           onChange={(e) => updateItem(index, 'rate', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
                       <div>
@@ -381,7 +394,7 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
                           step="0.01"
                           value={item.discount}
                           onChange={(e) => updateItem(index, 'discount', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
                       <div className="flex items-center justify-between">
@@ -403,8 +416,93 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
               </div>
             </div>
 
+            {/* Discount Section */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Discount & Tax</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Discount Type</label>
+                  <select
+                    value={discountType}
+                    onChange={(e) => setDiscountType(e.target.value as 'percentage' | 'amount')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="amount">Fixed Amount (₹)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Discount {discountType === 'percentage' ? '(%)' : '(₹)'}
+                  </label>
+                  <div className="relative">
+                    {discountType === 'percentage' ? (
+                      <Percent className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2" />
+                    ) : (
+                      <Calculator className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2" />
+                    )}
+                    <input
+                      type="number"
+                      min="0"
+                      max={discountType === 'percentage' ? 100 : undefined}
+                      step={discountType === 'percentage' ? 1 : 0.01}
+                      value={discountValue}
+                      onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
+                      className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder={discountType === 'percentage' ? '0' : '0.00'}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Enable GST</label>
+                  <div className="flex items-center space-x-3">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={enableGST}
+                        onChange={(e) => setEnableGST(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Add GST</span>
+                    </label>
+                  </div>
+                </div>
+                {enableGST && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">GST Rate (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+              {totalDiscount > 0 && (
+                <div className="flex justify-between text-xs">
+                  <span>DISCOUNT</span>
+                  <span>-{formatCurrency(totalDiscount)}</span>
+                </div>
+              )}
+              {enableGST && (
+                      step="0.1"
+                  <span>GST ({gstRate}%)</span>
+                      onChange={(e) => setGstRate(parseFloat(e.target.value) || 18)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              )}
+                    />
+                  </div>
+                )}
+              </div>
+              
+              {/* Discount Preview */}
+              {totalDiscount > 0 && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    <strong>Discount Applied:</strong> {formatCurrency(totalDiscount)}
+                    {discountType === 'percentage' && ` (${discountValue}% of ${formatCurrency(subtotal)})`}
+                  </p>
+                </div>
+              )}
+            </div>
             {/* Payment Details */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Payment Method
@@ -433,6 +531,10 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+            </div>
+            
+            {/* Notes */}
+            <div className="mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Notes
