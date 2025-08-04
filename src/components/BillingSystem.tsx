@@ -103,9 +103,9 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
     ? (subtotal * discountValue) / 100 
     : discountValue;
   
-  const discountedSubtotal = subtotal - totalDiscount;
+  const discountedSubtotal = Math.max(0, subtotal - totalDiscount);
   const tax = enableGST ? (discountedSubtotal * gstRate) / 100 : 0;
-  const grandTotal = subtotal + tax;
+  const grandTotal = discountedSubtotal + tax;
   const balanceDue = grandTotal - amountPaid;
 
   const handleCustomerSelect = (customer: Customer) => {
@@ -196,8 +196,7 @@ ${items.map(item =>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Subtotal: ${formatCurrency(subtotal)}
-${totalDiscount > 0 ? `Discount: -${formatCurrency(totalDiscount)}\n` : ''}
-${enableGST ? `Tax (${gstRate}%): ${formatCurrency(tax)}\n` : ''}
+${totalDiscount > 0 ? `Discount: -${formatCurrency(totalDiscount)}\n` : ''}${enableGST ? `Tax (${gstRate}%): ${formatCurrency(tax)}\n` : ''}
 *Total: ${formatCurrency(grandTotal)}*
 
 Payment: ${paymentMethod.toUpperCase()}
@@ -370,7 +369,7 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
                           min="1"
                           value={item.quantity}
                           onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
                         />
                       </div>
                       <div>
@@ -382,7 +381,7 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
                           step="0.01"
                           value={item.rate}
                           onChange={(e) => updateItem(index, 'rate', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
                         />
                       </div>
                       <div>
@@ -394,7 +393,7 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
                           step="0.01"
                           value={item.discount}
                           onChange={(e) => updateItem(index, 'discount', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
                         />
                       </div>
                       <div className="flex items-center justify-between">
@@ -639,10 +638,18 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
               <span>SUBTOTAL</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
-            <div className="flex justify-between text-xs">
-              <span>TAX (18%)</span>
-              <span>{formatCurrency(tax)}</span>
-            </div>
+            {totalDiscount > 0 && (
+              <div className="flex justify-between text-xs">
+                <span>DISCOUNT</span>
+                <span>-{formatCurrency(totalDiscount)}</span>
+              </div>
+            )}
+            {enableGST && (
+              <div className="flex justify-between text-xs">
+                <span>TAX ({gstRate}%)</span>
+                <span>{formatCurrency(tax)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-bold text-sm border-t border-gray-300 pt-1 mt-1">
               <span>TOTAL AMOUNT</span>
               <span>{formatCurrency(grandTotal)}</span>
