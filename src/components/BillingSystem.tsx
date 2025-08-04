@@ -474,21 +474,13 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
                       type="number"
                       min="0"
                       max="50"
-              {totalDiscount > 0 && (
-                <div className="flex justify-between text-xs">
-                  <span>DISCOUNT</span>
-                  <span>-{formatCurrency(totalDiscount)}</span>
+                    step="0.1"
+                    value={gstRate}
+                    onChange={(e) => setGstRate(parseFloat(e.target.value) || 18)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
                 </div>
               )}
-              {enableGST && (
-                      step="0.1"
-                  <span>GST ({gstRate}%)</span>
-                      onChange={(e) => setGstRate(parseFloat(e.target.value) || 18)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              )}
-                    />
-                  </div>
-                )}
               </div>
               
               {/* Discount Preview */}
@@ -534,6 +526,14 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
             </div>
             
             {/* Notes */}
+            {totalDiscount > 0 && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800">
+                  <strong>Discount Applied:</strong> {formatCurrency(totalDiscount)}
+                  {discountType === 'percentage' && ` (${discountValue}% of ${formatCurrency(subtotal)})`}
+                </p>
+              </div>
+            )}
             <div className="mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
