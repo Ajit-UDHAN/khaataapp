@@ -79,10 +79,15 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
             updatedItem.productName = variant.productName;
             updatedItem.packSize = variant.packSize;
             updatedItem.rate = variant.sellingPrice;
+            updatedItem.total = updatedItem.quantity * variant.sellingPrice;
           }
         }
         
-        if (field === 'quantity' || field === 'rate' || field === 'discount') {
+        if (field === 'quantity' || field === 'rate') {
+          updatedItem.total = (updatedItem.quantity * updatedItem.rate) - (updatedItem.discount || 0);
+        }
+        
+        if (field === 'discount') {
           updatedItem.total = (updatedItem.quantity * updatedItem.rate) - (updatedItem.discount || 0);
         }
         
@@ -133,19 +138,26 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
   const handleSaveInvoice = () => {
     if (items.length === 0 || !selectedCustomer) return;
 
+    // Validate that all items have required data
+    const validItems = items.filter(item => item.productName && item.quantity > 0 && item.rate > 0);
+    if (validItems.length === 0) {
+      alert('Please add valid items with product, quantity, and rate.');
+      return;
+    }
+
     const invoice: Invoice = {
       id: Date.now().toString(),
       invoiceNumber: generateInvoiceNumber(invoices),
       customerId: selectedCustomer.id,
       customerName: selectedCustomer.name,
-      items,
+      items: validItems,
       subtotal,
       tax,
       discount: totalDiscount,
-      total: grandTotal,
+      grandTotal,
       amountPaid,
       balanceDue,
-      paymentMethod,
+      paymentType: paymentMethod,
       status: balanceDue > 0 ? 'credit' : 'paid',
       notes,
       createdAt: new Date().toISOString()
@@ -367,6 +379,7 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
                           type="number"
                           placeholder="Qty"
                           min="1"
+                          step="1"
                           value={item.quantity}
                           onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
                           className="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
@@ -391,7 +404,7 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
                           placeholder="Discount"
                           min="0"
                           step="0.01"
-                          value={item.discount}
+                          value={item.discount || 0}
                           onChange={(e) => updateItem(index, 'discount', parseFloat(e.target.value) || 0)}
                           className="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
                         />
@@ -525,14 +538,6 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
             </div>
             
             {/* Notes */}
-            {totalDiscount > 0 && (
-              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm text-green-800">
-                  <strong>Discount Applied:</strong> {formatCurrency(totalDiscount)}
-                  {discountType === 'percentage' && ` (${discountValue}% of ${formatCurrency(subtotal)})`}
-                </p>
-              </div>
-            )}
             <div className="mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -617,15 +622,15 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
             {items.length > 0 ? items.map((item, index) => (
               <div key={index} className="mb-3">
                 <div className="flex justify-between">
-                  <span className="text-xs font-medium">{item.quantity}x {item.productName}</span>
-                  <span className="text-xs font-bold">{formatCurrency(item.total)}</span>
+                  <span className="text-xs font-medium">{item.quantity || 0}x {item.productName || 'Product'}</span>
+                  <span className="text-xs font-bold">{formatCurrency(item.total || 0)}</span>
                 </div>
                 {item.packSize && (
                   <div className="text-xs text-gray-600 ml-2">{item.packSize}</div>
                 )}
                 <div className="text-xs text-gray-500 ml-2">
-                  {formatCurrency(item.rate)} × {item.quantity} = {formatCurrency(item.quantity * item.rate)}
-                  {item.discount > 0 && <span> - {formatCurrency(item.discount)}</span>}
+                  {formatCurrency(item.rate || 0)} × {item.quantity || 0} = {formatCurrency((item.quantity || 0) * (item.rate || 0))}
+                  {(item.discount || 0) > 0 && <span> - {formatCurrency(item.discount || 0)}</span>}
                 </div>
               </div>
             )) : (
