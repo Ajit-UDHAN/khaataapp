@@ -180,47 +180,87 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
   const shareOnWhatsApp = () => {
     if (!selectedCustomer || items.length === 0) return;
 
-    const receiptText = `
-*${businessProfile?.shopName || 'Shop Name'}*
+    const receiptText = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏪 *${businessProfile?.shopName || 'SHOP NAME'}*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${businessProfile?.businessAddress || 'Shop Address'}
-${businessProfile?.contactNumber || 'Contact Number'}
+📞 ${businessProfile?.contactNumber || 'Contact Number'}
 ${businessProfile?.gstNumber ? `GST: ${businessProfile.gstNumber}` : ''}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*INVOICE*
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃            🧾 *INVOICE*            ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-Invoice: ${generateInvoiceNumber(invoices)}
-Date: ${new Date().toLocaleDateString('en-IN')}
-Time: ${new Date().toLocaleTimeString('en-IN')}
+📋 *Invoice:* ${generateInvoiceNumber(invoices)}
+📅 *Date:* ${new Date().toLocaleDateString('en-IN')}
+🕐 *Time:* ${new Date().toLocaleTimeString('en-IN')}
 
-Customer: ${selectedCustomer.name}
-Phone: ${selectedCustomer.phone}
+👤 *Customer:* ${selectedCustomer.name}
+📱 *Phone:* ${selectedCustomer.phone}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*ITEMS*
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┌─────────────────────────────────────┐
+│              📦 *ITEMS*              │
+└─────────────────────────────────────┘
 
 ${items.map(item => 
-  `${item.quantity}x ${item.productName} ${item.packSize}\n₹${item.rate} × ${item.quantity} = ₹${item.total}`
+  `🔸 *${item.quantity}x* ${item.productName}
+   📦 ${item.packSize}
+   💰 ₹${item.rate} × ${item.quantity} = *₹${item.total}*`
 ).join('\n\n')}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┌─────────────────────────────────────┐
+│            💳 *BILLING*             │
+└─────────────────────────────────────┘
 
-Subtotal: ${formatCurrency(subtotal)}
-${totalDiscount > 0 ? `Discount: -${formatCurrency(totalDiscount)}\n` : ''}${enableGST ? `Tax (${gstRate}%): ${formatCurrency(tax)}\n` : ''}
-*Total: ${formatCurrency(grandTotal)}*
+💵 *Subtotal:* ${formatCurrency(subtotal)}
+${totalDiscount > 0 ? `🎯 *Discount:* -${formatCurrency(totalDiscount)}\n` : ''}${enableGST ? `📊 *Tax (${gstRate}%):* ${formatCurrency(tax)}\n` : ''}
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 💰 *TOTAL: ${formatCurrency(grandTotal)}* ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-Payment: ${paymentMethod.toUpperCase()}
-Paid: ${formatCurrency(amountPaid)}
-${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
+💳 *Payment:* ${paymentMethod.toUpperCase()}
+✅ *Paid:* ${formatCurrency(amountPaid)}
+${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : ''}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*THANK YOU FOR YOUR BUSINESS!*
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃    🙏 *THANK YOU FOR YOUR*      ┃
+┃         *BUSINESS!* 🙏          ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+💬 *Follow us for offers & updates!*
+🔄 *Visit again soon!*
     `.trim();
 
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(receiptText)}`;
+    const whatsappUrl = `https://wa.me/${selectedCustomer.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(receiptText)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const sendReceiptToCustomer = () => {
+    if (!selectedCustomer || items.length === 0) return;
+
+    const receiptText = `🏪 *${businessProfile?.shopName || 'SHOP NAME'}*
+
+Hi ${selectedCustomer.name}! 👋
+
+Here's your purchase receipt:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 *Invoice:* ${generateInvoiceNumber(invoices)}
+📅 *Date:* ${new Date().toLocaleDateString('en-IN')}
+
+📦 *Items Purchased:*
+${items.map(item => 
+  `• ${item.quantity}x ${item.productName} (${item.packSize}) - ₹${item.total}`
+).join('\n')}
+
+💰 *Total Amount:* ${formatCurrency(grandTotal)}
+💳 *Payment:* ${paymentMethod.toUpperCase()}
+${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ *Fully Paid*'}
+
+🙏 Thank you for shopping with us!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
+    const whatsappUrl = `https://wa.me/${selectedCustomer.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(receiptText)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -564,12 +604,20 @@ ${balanceDue > 0 ? `Balance Due: ${formatCurrency(balanceDue)}` : ''}
                 Save Invoice
               </button>
               <button
+                onClick={sendReceiptToCustomer}
+                disabled={!selectedCustomer || items.length === 0}
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+              >
+                <Phone className="w-4 h-4" />
+                Send to Customer
+              </button>
+              <button
                 onClick={shareOnWhatsApp}
                 disabled={!selectedCustomer || items.length === 0}
                 className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 <Share2 className="w-4 h-4" />
-                Share on WhatsApp
+                Share Receipt
               </button>
             </div>
           </div>
