@@ -1,22 +1,18 @@
 import React, { useState } from 'react';
-import { Mail, Phone, Lock, Eye, EyeOff, Store, ArrowRight, UserPlus, LogIn, User } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Store, ArrowRight, UserPlus, LogIn, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const LoginScreen: React.FC = () => {
-  const { login, loginWithPhone, isLoading } = useAuth();
+  const { login, isLoading } = useAuth();
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
-  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
     password: '',
-    confirmPassword: '',
-    otp: ''
+    confirmPassword: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -26,30 +22,25 @@ const LoginScreen: React.FC = () => {
         setError('Name is required');
         return false;
       }
-      if (loginMethod === 'email' && formData.password !== formData.confirmPassword) {
+      if (formData.password !== formData.confirmPassword) {
         setError('Passwords do not match');
         return false;
       }
-      if (loginMethod === 'email' && formData.password.length < 6) {
+      if (formData.password.length < 6) {
         setError('Password must be at least 6 characters');
         return false;
       }
     }
     
-    if (loginMethod === 'email' && !formData.email.includes('@')) {
+    if (!formData.email.includes('@')) {
       setError('Please enter a valid email address');
-      return false;
-    }
-    
-    if (loginMethod === 'phone' && formData.phone.length < 10) {
-      setError('Please enter a valid phone number');
       return false;
     }
     
     return true;
   };
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -58,46 +49,18 @@ const LoginScreen: React.FC = () => {
 
     try {
       if (authMode === 'signup') {
-        // For demo purposes, we'll create the account and log them in
-        setSuccess('Account created successfully! Logging you in...');
-        setTimeout(async () => {
-          await login(formData.email, formData.password);
-        }, 1000);
+        setSuccess('Creating your account...');
+        await login(formData.email, formData.password, formData.name);
       } else {
         await login(formData.email, formData.password);
       }
     } catch (err) {
       if (authMode === 'signup') {
-        setError('Failed to create account. Please try again.');
+        setError('Email already exists. Please sign in instead.');
       } else {
-        setError('Invalid email or password. If you\'re new, please sign up first.');
+        setError('Invalid email or password. Please check your credentials.');
       }
     }
-  };
-
-  const handlePhoneAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    
-    if (!validateForm()) return;
-    
-    if (!otpSent) {
-      // TODO: Implement real OTP sending
-      setError('OTP service not configured. Please use email login or contact administrator to set up SMS service.');
-      return;
-    }
-    
-    try {
-      await loginWithPhone(formData.phone, formData.otp);
-    } catch (err) {
-      setError('Invalid OTP. Please try again.');
-    }
-  };
-
-  const resetPhoneLogin = () => {
-    setOtpSent(false);
-    setFormData(prev => ({ ...prev, otp: '' }));
   };
 
   const switchAuthMode = () => {
@@ -107,18 +70,9 @@ const LoginScreen: React.FC = () => {
     setFormData({
       name: '',
       email: '',
-      phone: '',
       password: '',
-      confirmPassword: '',
-      otp: ''
+      confirmPassword: ''
     });
-  };
-
-  const switchLoginMethod = (method: 'email' | 'phone') => {
-    setLoginMethod(method);
-    setError('');
-    setSuccess('');
-    setOtpSent(false);
   };
 
   return (
@@ -130,7 +84,7 @@ const LoginScreen: React.FC = () => {
             <Store className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">ShopManager Pro</h1>
-          <p className="text-gray-600">Complete Business Management Solution</p>
+          <p className="text-gray-600">Professional Business Management Platform</p>
         </div>
 
         {/* Auth Mode Toggle */}
@@ -168,35 +122,9 @@ const LoginScreen: React.FC = () => {
             <p className="text-gray-600 mt-2">
               {authMode === 'signin' 
                 ? 'Sign in to access your business dashboard' 
-                : 'Join thousands of businesses using ShopManager Pro'
+                : 'Start managing your business professionally'
               }
             </p>
-          </div>
-
-          {/* Login Method Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
-            <button
-              onClick={() => switchLoginMethod('email')}
-              className={`flex-1 flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
-                loginMethod === 'email'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Mail className="w-4 h-4 mr-2" />
-              Email
-            </button>
-            <button
-              onClick={() => switchLoginMethod('phone')}
-              className={`flex-1 flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
-                loginMethod === 'phone'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Phone className="w-4 h-4 mr-2" />
-              Phone
-            </button>
           </div>
 
           {/* Success Message */}
@@ -216,9 +144,8 @@ const LoginScreen: React.FC = () => {
             </div>
           )}
 
-          {/* Email Form */}
-          {loginMethod === 'email' && (
-            <form onSubmit={handleEmailAuth} className="space-y-4">
+          {/* Auth Form */}
+          <form onSubmit={handleAuth} className="space-y-4">
               {authMode === 'signup' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
@@ -312,86 +239,7 @@ const LoginScreen: React.FC = () => {
                   </>
                 )}
               </button>
-            </form>
-          )}
-
-          {/* Phone Form */}
-          {loginMethod === 'phone' && (
-            <form onSubmit={handlePhoneAuth} className="space-y-4">
-              {authMode === 'signup' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                  <div className="relative">
-                    <User className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="Enter your full name"
-                    />
-                  </div>
-                </div>
-              )}
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                <div className="relative">
-                  <Phone className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                  <input
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="+91 98765 43210"
-                    disabled={otpSent}
-                  />
-                </div>
-              </div>
-              
-              {otpSent && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Enter OTP</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.otp}
-                    onChange={(e) => setFormData(prev => ({ ...prev, otp: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg tracking-widest transition-all duration-200"
-                    placeholder="123456"
-                    maxLength={6}
-                  />
-                  <p className="text-sm text-gray-600 mt-2 text-center">
-                    OTP sent to {formData.phone}.{' '}
-                    <button
-                      type="button"
-                      onClick={resetPhoneLogin}
-                      className="text-blue-600 hover:text-blue-800 font-medium underline"
-                    >
-                      Change number
-                    </button>
-                  </p>
-                </div>
-              )}
-              
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center disabled:opacity-50 transform hover:scale-105 shadow-lg"
-              >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    {otpSent ? 'Verify OTP' : (authMode === 'signin' ? 'Send OTP' : 'Create Account & Send OTP')}
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </>
-                )}
-              </button>
-            </form>
-          )}
+          </form>
 
           {/* Switch Auth Mode */}
           <div className="mt-6 text-center">
@@ -406,19 +254,14 @@ const LoginScreen: React.FC = () => {
             </p>
           </div>
 
-          {/* Demo Info */}
-          <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+          {/* Production Info */}
+          <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
             <div className="text-center">
-              <h4 className="text-sm font-semibold text-blue-800 mb-2">🚀 Getting Started</h4>
-              <div className="space-y-1 text-xs text-blue-700">
-                <p><strong>New Users:</strong> Click "Sign Up" and create your account</p>
-                <p><strong>Existing Users:</strong> Click "Sign In" with your credentials</p>
-                <p><strong>Demo:</strong> Use any email/password to try the system</p>
-              </div>
-              <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                <p className="text-xs text-yellow-800">
-                  ⚠️ <strong>Note:</strong> Phone OTP requires SMS service setup (see README)
-                </p>
+              <h4 className="text-sm font-semibold text-green-800 mb-2">🔒 Secure & Professional</h4>
+              <div className="space-y-1 text-xs text-green-700">
+                <p><strong>Data Security:</strong> Your business data is completely private</p>
+                <p><strong>User Isolation:</strong> Each account has separate, secure data</p>
+                <p><strong>Professional Grade:</strong> Built for serious business management</p>
               </div>
             </div>
           </div>
@@ -427,12 +270,12 @@ const LoginScreen: React.FC = () => {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-600">
-            Secure & Professional Business Management Platform
+            Trusted by Businesses Worldwide
           </p>
           <div className="flex items-center justify-center mt-2 space-x-4 text-xs text-gray-500">
-            <span>✅ Data Security</span>
-            <span>✅ Multi-User Support</span>
-            <span>✅ Cloud Backup</span>
+            <span>🔒 Secure</span>
+            <span>📊 Professional</span>
+            <span>🚀 Reliable</span>
           </div>
         </div>
       </div>

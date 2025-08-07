@@ -5,8 +5,7 @@ interface AuthContextType {
   user: User | null;
   businessProfile: BusinessProfile | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithPhone: (phone: string, otp: string) => Promise<void>;
+  login: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => void;
   updateBusinessProfile: (profile: Omit<BusinessProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => void;
 }
@@ -45,11 +44,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, name?: string) => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual authentication service
-      // For now, create user based on email
+      // Create consistent user ID from email
+      const userId = btoa(email).replace(/[^a-zA-Z0-9]/g, '');
+      
+      // Check if user exists for signin
+      const existingUserData = localStorage.getItem(`user_${userId}`);
+      
+      if (!name && !existingUserData) {
+        throw new Error('User not found. Please sign up first.');
+      }
+      
+      if (name && existingUserData) {
+        throw new Error('User already exists. Please sign in instead.');
+      }
+      
+      let userData: User;
+      
+      if (existingUserData) {
+        // Existing user - verify password
+        const storedData = JSON.parse(existingUserData);
+        if (storedData.password !== btoa(password)) {
+          throw new Error('Invalid password');
+        }
+        userData = storedData.user;
+      } else {
+        // New user - create account
+        userData = {
+          id: userId,
+          email,
+          name: name || email.split('@')[0],
+          createdAt: new Date().toISOString()
+        };
+        
+        // Store user data with password
+        localStorage.setItem(`user_${userId}`, JSON.stringify({
+          user: userData,
+          password: btoa(password)
+        }));
+      }
+      
+      setUser(userData);
+      localStorage.setItem('currentUser', JSON.stringify(userData));
+      
+      // Check for existing business profile
+      const existingProfile = localStorage.getItem(`${userData.id}_businessProfile`);
+      if (existingProfile) {
+        const profile = JSON.parse(existingProfile);
+        setBusinessProfile(profile);
+      }
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const login_old = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
       const mockUser: User = {
         id: btoa(email).replace(/[^a-zA-Z0-9]/g, ''), // Create consistent ID from email
         email,
@@ -68,31 +123,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       throw new Error('Login failed');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loginWithPhone = async (phone: string, otp: string) => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with real OTP verification service
-      // Example implementations:
-      
-      // Firebase Auth:
-      // const confirmationResult = await signInWithPhoneNumber(auth, phone, recaptchaVerifier);
-      // const result = await confirmationResult.confirm(otp);
-      
-      // Twilio/MSG91 API:
-      // const response = await fetch('/api/verify-otp', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ phone, otp })
-      // });
-      
-      throw new Error('OTP verification not implemented. Please integrate with Firebase Auth, Twilio, MSG91, or AWS SNS for production use.');
-    } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Phone login failed');
     } finally {
       setIsLoading(false);
     }
@@ -128,7 +158,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         businessProfile,
         isLoading,
         login,
-        loginWithPhone,
         logout,
         updateBusinessProfile,
       }}

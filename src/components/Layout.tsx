@@ -70,7 +70,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
           </button>
         </div>
 
-        <nav className="mt-6">
+        <nav className="mt-6 pb-32 overflow-y-auto max-h-[calc(100vh-200px)]">
           {navigation.map((item) => {
             const Icon = item.icon;
             return (
@@ -97,7 +97,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
           })}
         </nav>
 
-        <div className="absolute bottom-6 left-4 right-4 space-y-4">
+        <div className="absolute bottom-6 left-4 right-4 space-y-4 bg-white">
           {/* User Profile */}
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
             <div className="flex items-center justify-between mb-3">
@@ -154,7 +154,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
       {/* Main content */}
       <div className="flex-1 flex flex-col lg:ml-0">
         {/* Mobile header */}
-        <header className="lg:hidden flex items-center justify-between h-16 px-4 bg-white shadow-sm border-b border-gray-100">
+        <header className="lg:hidden flex items-center justify-between h-16 px-4 bg-white shadow-sm border-b border-gray-100 relative z-30">
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200"
@@ -169,7 +169,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto bg-gray-50">
+        <main className="flex-1 overflow-auto bg-gray-50 relative z-10">
           {children}
         </main>
       </div>
