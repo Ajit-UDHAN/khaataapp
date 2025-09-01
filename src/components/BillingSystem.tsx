@@ -25,6 +25,8 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
   const [notes, setNotes] = useState('');
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [productSearch, setProductSearch] = useState('');
+  const [manualGST, setManualGST] = useState(0);
+  const [useManualGST, setUseManualGST] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     name: '',
     phone: '',
@@ -109,7 +111,7 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
     : discountValue;
   
   const discountedSubtotal = Math.max(0, subtotal - totalDiscount);
-  const tax = enableGST ? (discountedSubtotal * gstRate) / 100 : 0;
+  const tax = useManualGST ? manualGST : (enableGST ? (discountedSubtotal * gstRate) / 100 : 0);
   const grandTotal = discountedSubtotal + tax;
   const balanceDue = grandTotal - amountPaid;
 
@@ -214,6 +216,7 @@ ${items.map(item =>
 
 💵 *Subtotal:* ${formatCurrency(subtotal)}
 ${totalDiscount > 0 ? `🎯 *Discount:* -${formatCurrency(totalDiscount)}\n` : ''}${enableGST ? `📊 *Tax (${gstRate}%):* ${formatCurrency(tax)}\n` : ''}
+${useManualGST ? `📊 *GST (Manual):* ${formatCurrency(tax)}\n` : ''}
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ 💰 *TOTAL: ${formatCurrency(grandTotal)}* ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -311,6 +314,37 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                     </div>
                   </div>
                 )}
+                <div className="md:col-span-2 lg:col-span-4">
+                  <div className="flex items-center space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={useManualGST}
+                        onChange={(e) => {
+                          setUseManualGST(e.target.checked);
+                          if (e.target.checked) {
+                            setEnableGST(false);
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Manual GST Amount</span>
+                    </label>
+                    {useManualGST && (
+                      <div className="flex-1 max-w-xs">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={manualGST}
+                          onChange={(e) => setManualGST(parseFloat(e.target.value) || 0)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Enter GST amount"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -471,7 +505,7 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
             {/* Discount Section */}
             <div className="mb-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Discount & Tax</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Discount Type</label>
                   <select
@@ -546,7 +580,7 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
               )}
             </div>
             {/* Payment Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Payment Method
@@ -575,30 +609,36 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+              <div className="md:col-span-2 lg:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Balance Due
+                </label>
+                <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 font-medium">
+                  {formatCurrency(balanceDue)}
+                </div>
+              </div>
             </div>
             
             {/* Notes */}
             <div className="mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notes
-                </label>
-                <input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Optional notes..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notes
+              </label>
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Optional notes..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-3">
               <button
                 onClick={handleSaveInvoice}
                 disabled={!selectedCustomer || items.length === 0}
-                className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+                className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 text-sm font-medium"
               >
                 <Save className="w-4 h-4" />
                 Save Invoice
@@ -606,7 +646,7 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
               <button
                 onClick={sendReceiptToCustomer}
                 disabled={!selectedCustomer || items.length === 0}
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 text-sm font-medium"
               >
                 <Phone className="w-4 h-4" />
                 Send to Customer
@@ -614,7 +654,7 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
               <button
                 onClick={shareOnWhatsApp}
                 disabled={!selectedCustomer || items.length === 0}
-                className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+                className="flex items-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 text-sm font-medium"
               >
                 <Share2 className="w-4 h-4" />
                 Share Receipt
@@ -625,7 +665,7 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
       </div>
 
       {/* Right Side - Live Receipt Preview */}
-      <div className="w-96 bg-gray-50 border-l border-gray-200 p-6 overflow-y-auto">
+      <div className="hidden lg:block w-96 bg-gray-50 border-l border-gray-200 p-6 overflow-y-auto">
         <div className="sticky top-0 bg-white pb-4">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Receipt className="w-5 h-5 mr-2" />

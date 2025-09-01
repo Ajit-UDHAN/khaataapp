@@ -70,7 +70,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
           </button>
         </div>
 
-        <nav className="mt-6 pb-32 overflow-y-auto max-h-[calc(100vh-200px)]">
+        <nav className="mt-6 flex-1 overflow-y-auto">
           {navigation.map((item) => {
             const Icon = item.icon;
             return (
@@ -97,7 +97,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
           })}
         </nav>
 
-        <div className="absolute bottom-6 left-4 right-4 space-y-4 bg-white">
+        <div className="mt-auto p-4 space-y-4 bg-white border-t border-gray-100">
           {/* User Profile */}
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
             <div className="flex items-center justify-between mb-3">
@@ -121,7 +121,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 lg:block hidden">
             <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
               <Plus className="w-4 h-4 mr-2" />
               Quick Actions
@@ -152,7 +152,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col lg:ml-0">
+      <div className="flex-1 flex flex-col">
         {/* Mobile header */}
         <header className="lg:hidden flex items-center justify-between h-16 px-4 bg-white shadow-sm border-b border-gray-100 relative z-30">
           <button
@@ -169,7 +169,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto bg-gray-50 relative z-10">
+        <main className="flex-1 overflow-auto bg-gray-50">
           {children}
         </main>
       </div>
