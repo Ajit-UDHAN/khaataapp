@@ -288,43 +288,64 @@ const InvoiceManager: React.FC = () => {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          <div className="flex items-center gap-4">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+           <div className="mb-6">
+             <div className="bg-white rounded-lg shadow-sm">
+               <div className="p-4 border-b border-gray-200">
+                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                   <Package className="w-5 h-5 mr-2 text-purple-600" />
+                   Items ({invoice.items.length})
+                 </h3>
+               </div>
+               <div className="overflow-x-auto">
+                 <table className="w-full">
+                   <thead className="bg-gray-50">
             >
-              <option value="">All Status</option>
-              <option value="paid">Paid</option>
-              <option value="partial">Partial</option>
-              <option value="credit">Credit</option>
-            </select>
+                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Item</th>
+                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Pack Size</th>
+                       <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Qty</th>
+                       <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Rate</th>
+                       <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Total</th>
             <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All Time</option>
-              <option value="today">Today</option>
-              <option value="week">Last 7 Days</option>
-              <option value="month">This Month</option>
-              <option value="year">This Year</option>
-            </select>
-            {(searchTerm || statusFilter || dateFilter) && (
+                   </thead>
+                   <tbody className="divide-y divide-gray-200">
+                     {invoice.items.map((item, index) => (
+                       <tr key={index} className="hover:bg-gray-50">
+                         <td className="px-6 py-4">
+                           <div className="font-medium text-gray-900">{item.productName}</div>
+                         </td>
+                         <td className="px-6 py-4 text-gray-600">{item.packSize}</td>
+                         <td className="px-6 py-4 text-right">
+                           <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
+                             {item.quantity}
+                           </span>
+                         </td>
+                         <td className="px-6 py-4 text-right font-medium text-gray-900">{formatCurrency(item.rate)}</td>
+                         <td className="px-6 py-4 text-right font-bold text-gray-900">{formatCurrency(item.total)}</td>
+                       </tr>
+                     ))}
+             <div className="mb-6">
+               <div className="bg-white rounded-lg shadow-sm p-4">
+                 <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                   <FileText className="w-5 h-5 mr-2 text-orange-600" />
+                   Notes
+                 </h3>
+                 <p className="text-gray-700 bg-orange-50 rounded-lg p-4 border-l-4 border-orange-400">{invoice.notes}</p>
+               </div>
+             </div>
               <button
                 onClick={() => {
                   setSearchTerm('');
                   setStatusFilter('');
                   setDateFilter('');
                 }}
-                className="p-2 text-gray-500 hover:text-gray-700"
+               className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200"
               >
                 <X className="w-5 h-5" />
               </button>
             )}
           </div>
         </div>
-      </div>
+           <div className="flex items-center justify-end gap-4 pt-4 border-t border-gray-200">
 
       {/* Invoices List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -367,19 +388,44 @@ const InvoiceManager: React.FC = () => {
               <tbody className="divide-y divide-gray-200">
                 {filteredInvoices.map((invoice) => (
                   <tr key={invoice.id} className="hover:bg-gray-50">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      <div>
+               <div className="bg-white rounded-lg p-4 shadow-sm">
+                 <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                   <Users className="w-5 h-5 mr-2 text-blue-600" />
+                   Bill To:
+                 </h3>
+                 <div className="space-y-2">
+                   <p className="font-medium text-gray-900 text-lg">{customer?.name || 'Unknown Customer'}</p>
+                   {customer?.phone && (
+                     <p className="text-gray-600 flex items-center">
+                       <Phone className="w-4 h-4 mr-2" />
+                       {customer.phone}
+                     </p>
+                   )}
+           <div className="mb-6">
+             <div className="bg-white rounded-lg shadow-sm p-6 ml-auto max-w-md">
+               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                 <Calculator className="w-5 h-5 mr-2 text-green-600" />
+                 Payment Summary
+               </h3>
+               <div className="space-y-3">
+                       {customer.address}
+                     </p>
+                   )}
+                 </div>
+               </div>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <p className="font-medium text-gray-900">{invoice.invoiceNumber}</p>
-                        <p className="text-sm text-gray-600">{invoice.items.length} item{invoice.items.length > 1 ? 's' : ''}</p>
+                     <span className="font-bold text-red-600 text-lg">{formatCurrency(invoice.balanceDue)}</span>
+                 <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                   <Receipt className="w-5 h-5 mr-2 text-green-600" />
+                   Invoice Info:
+                 </h3>
+                 <div className="space-y-3">
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <p className="font-medium text-gray-900">{invoice.customerName}</p>
-                        <p className="text-sm text-gray-600 capitalize">{invoice.paymentType}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                     <span className="font-bold text-blue-600">{invoice.invoiceNumber}</span>
                       {new Date(invoice.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -387,7 +433,7 @@ const InvoiceManager: React.FC = () => {
                         <p className="font-medium text-gray-900">{formatCurrency(invoice.grandTotal)}</p>
                         {invoice.balanceDue > 0 && (
                           <p className="text-sm text-red-600">Due: {formatCurrency(invoice.balanceDue)}</p>
-                        )}
+                     <span className="font-medium capitalize bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">{invoice.paymentType}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -494,10 +540,10 @@ const InvoiceDetailModal: React.FC<{
                     <span className="text-gray-600">Payment:</span>
                     <span className="font-medium capitalize">{invoice.paymentType}</span>
                   </div>
-                  <div className="flex justify-between">
+                 <div className="border-t border-gray-300 pt-3 mt-3">
                     <span className="text-gray-600">Status:</span>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      invoice.status === 'paid' 
+                     <span className="text-xl font-bold text-gray-900">Grand Total:</span>
+                     <span className="text-xl font-bold text-green-600">{formatCurrency(invoice.grandTotal)}</span>
                         ? 'bg-green-100 text-green-800' 
                         : invoice.status === 'credit'
                         ? 'bg-red-100 text-red-800'
@@ -593,14 +639,14 @@ const InvoiceDetailModal: React.FC<{
           {/* Actions */}
           <div className="flex items-center justify-end gap-4">
             <button
-              onClick={onShare}
+               className="flex items-center px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200 font-medium"
               className="flex items-center px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200"
             >
               <Share className="w-4 h-4 mr-2" />
               Share
             </button>
             <button
-              onClick={onPrint}
+               className="flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 font-medium shadow-lg"
               className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
             >
               <Download className="w-4 h-4 mr-2" />
@@ -613,4 +659,5 @@ const InvoiceDetailModal: React.FC<{
   );
 };
 
+ const { Users, Phone, MapPin, Package, Calculator, FileText } = require('lucide-react');
 export default InvoiceManager;

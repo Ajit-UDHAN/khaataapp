@@ -59,7 +59,13 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
       `}>
         <div className="flex items-center justify-between h-20 px-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <div>
-            <h1 className="text-xl font-bold">{businessProfile?.shopName || 'ShopManager Pro'}</h1>
+           <div className="flex items-center">
+             <img src="/KHA.jpg" alt="KHAATA" className="w-8 h-8 rounded-lg mr-3" />
+             <div>
+               <h1 className="text-xl font-bold">{businessProfile?.shopName || 'KHAATA'}</h1>
+               <p className="text-xs text-blue-100">Business Management</p>
+             </div>
+           </div>
             <p className="text-xs text-blue-100">{user?.name || 'Business Management'}</p>
           </div>
           <button
@@ -162,7 +168,10 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
             <Menu className="w-6 h-6" />
           </button>
           <div className="text-center">
-            <h1 className="text-lg font-bold text-gray-900">{businessProfile?.shopName || 'ShopManager Pro'}</h1>
+           <div className="flex items-center">
+             <img src="/KHA.jpg" alt="KHAATA" className="w-6 h-6 rounded mr-2" />
+             <h1 className="text-lg font-bold text-gray-900">{businessProfile?.shopName || 'KHAATA'}</h1>
+           </div>
             <p className="text-xs text-gray-500">{user?.name || 'Business Management'}</p>
           </div>
           <div className="w-10" /> {/* Spacer */}

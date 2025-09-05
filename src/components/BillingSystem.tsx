@@ -119,7 +119,7 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
   };
 
   const handleAddNewCustomer = () => {
-    if (newCustomer.name && newCustomer.phone) {
+   if (newCustomer.name) {
       const customer: Customer = {
         id: Date.now().toString(),
         ...newCustomer,
@@ -181,7 +181,7 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
     if (!selectedCustomer || items.length === 0) return;
 
     const receiptText = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🏪 *${businessProfile?.shopName || 'SHOP NAME'}*
+🏪 *${businessProfile?.shopName || 'KHAATA'}*
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${businessProfile?.businessAddress || 'Shop Address'}
 📞 ${businessProfile?.contactNumber || 'Contact Number'}
@@ -238,7 +238,7 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : ''}
   const sendReceiptToCustomer = () => {
     if (!selectedCustomer || items.length === 0) return;
 
-    const receiptText = `🏪 *${businessProfile?.shopName || 'SHOP NAME'}*
+   const receiptText = `🏪 *${businessProfile?.shopName || 'KHAATA'}*
 
 Hi ${selectedCustomer.name}! 👋
 
@@ -386,11 +386,40 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                   <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                   <input
                     type="text"
-                    placeholder="Search products..."
+                   placeholder="Search products to add quickly..."
                     value={productSearch}
                     onChange={(e) => setProductSearch(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                 {productSearch && (
+                   <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                     {filteredProducts.slice(0, 5).map(variant => (
+                       <div
+                         key={variant.id}
+                         onClick={() => {
+                           const newItem: InvoiceItem = {
+                             productId: variant.productId,
+                             variantId: variant.id,
+                             productName: variant.productName,
+                             packSize: variant.packSize,
+                             quantity: 1,
+                             rate: variant.sellingPrice,
+                             total: variant.sellingPrice,
+                             tax: 0,
+                             discount: 0
+                           };
+                           setItems(prev => [...prev, newItem]);
+                           setProductSearch('');
+                         }}
+                         className="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                       >
+                         <div className="font-medium text-gray-900">{variant.productName}</div>
+                         <div className="text-sm text-gray-600">{variant.packSize} - {formatCurrency(variant.sellingPrice)}</div>
+                         <div className="text-xs text-gray-500">Stock: {variant.stockQuantity}</div>
+                       </div>
+                     ))}
+                   </div>
+                 )}
                 </div>
               </div>
 
@@ -526,11 +555,11 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                       type="number"
                       min="0"
                       max="50"
-                      step="0.01"
+                     step="0.1"
                       value={gstRate}
                       onChange={(e) => setGstRate(parseFloat(e.target.value) || 18)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Enter GST rate (e.g., 5, 12, 18, 28)"
+                     placeholder="Enter any GST rate (e.g., 5, 12, 18, 28)"
                     />
                   </div>
                 )}
@@ -580,10 +609,10 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
               </label>
               <input
                 type="text"
-                value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Optional notes..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+               placeholder="Phone Number (optional)"
               />
             </div>
 
@@ -636,7 +665,7 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
           </div>
           
           <div className="mb-4">
-            <div className="font-bold text-center text-base">{businessProfile?.shopName || 'SHOP NAME'}</div>
+           <div className="font-bold text-center text-base">{businessProfile?.shopName || 'KHAATA'}</div>
             <div className="text-center text-xs mt-1">{businessProfile?.businessAddress || 'Shop Address'}</div>
             <div className="text-center text-xs">{businessProfile?.contactNumber || 'Contact Number'}</div>
             {businessProfile?.gstNumber && (

@@ -81,9 +81,9 @@ const LoginScreen: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Store className="w-8 h-8 text-white" />
+           <img src="/KHA.jpg" alt="KHAATA" className="w-12 h-12 rounded-xl" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">ShopManager Pro</h1>
+         <h1 className="text-3xl font-bold text-gray-900 mb-2">KHAATA</h1>
           <p className="text-gray-600">Professional Business Management Platform</p>
         </div>
 
