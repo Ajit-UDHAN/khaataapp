@@ -331,7 +331,8 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                     placeholder="Phone Number *"
                     value={newCustomer.phone}
                     onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   placeholder="Phone Number (optional)"
                   />
                   <input
                     type="email"
