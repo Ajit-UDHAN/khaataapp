@@ -1,10 +1,10 @@
 import React, { useState, useContext } from 'react';
-import { AppContext } from '../contexts/AppContext';
+import { useApp } from '../contexts/AppContext';
 import { AuthContext } from '../contexts/AuthContext';
 import { FileText, Search, Plus, Eye, Edit, Trash2, Calendar, User, Phone, Mail, IndianRupee, Filter, Download, Share2 } from 'lucide-react';
 
 const InvoiceManager: React.FC = () => {
-  const { invoices, customers, deleteInvoice } = useContext(AppContext);
+  const { invoices, customers, deleteInvoice } = useApp();
   const { user } = useContext(AuthContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
