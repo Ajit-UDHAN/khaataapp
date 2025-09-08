@@ -113,6 +113,47 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
   const grandTotal = discountedSubtotal + tax;
   const balanceDue = grandTotal - amountPaid;
 
+  // Auto-save draft functionality
+  useEffect(() => {
+    if (items.length > 0 || selectedCustomer) {
+      const draft = {
+        id: currentDraft || Date.now().toString(),
+        customer: selectedCustomer,
+        items,
+        paymentMethod,
+        amountPaid,
+        discountType,
+        discountValue,
+        enableGST,
+        gstRate,
+        notes,
+        savedAt: new Date().toISOString()
+      };
+      localStorage.setItem('currentDraft', JSON.stringify(draft));
+    }
+  }, [items, selectedCustomer, paymentMethod, amountPaid, discountType, discountValue, enableGST, gstRate, notes]);
+
+  // Load draft on component mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem('currentDraft');
+    if (savedDraft) {
+      const draft = JSON.parse(savedDraft);
+      if (draft.items?.length > 0) {
+        setItems(draft.items);
+        setSelectedCustomer(draft.customer);
+        setCustomerSearch(draft.customer?.name || '');
+        setPaymentMethod(draft.paymentMethod || 'cash');
+        setAmountPaid(draft.amountPaid || 0);
+        setDiscountType(draft.discountType || 'percentage');
+        setDiscountValue(draft.discountValue || 0);
+        setEnableGST(draft.enableGST || false);
+        setGstRate(draft.gstRate || 18);
+        setNotes(draft.notes || '');
+        setCurrentDraft(draft.id);
+      }
+    }
+  }, []);
+
   const handleCustomerSelect = (customer: Customer) => {
     setSelectedCustomer(customer);
     setCustomerSearch(customer.name);
@@ -165,6 +206,9 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
 
     setInvoices(prev => [...prev, invoice]);
     
+    // Clear draft after successful save
+    localStorage.removeItem('currentDraft');
+    
     // Reset form
     setItems([]);
     setSelectedCustomer(null);
@@ -173,6 +217,7 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
     setDiscountValue(0);
     setNotes('');
     setProductSearch('');
+    setCurrentDraft('');
     
     alert('Invoice saved successfully!');
   };
@@ -264,15 +309,169 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
     window.open(whatsappUrl, '_blank');
   };
 
+  const saveDraft = () => {
+    if (items.length === 0 && !selectedCustomer) {
+      alert('Nothing to save');
+      return;
+    }
+    
+    const draftName = prompt('Enter draft name:') || `Draft ${new Date().toLocaleString()}`;
+    const draft = {
+      id: Date.now().toString(),
+      name: draftName,
+      customer: selectedCustomer,
+      items,
+      paymentMethod,
+      amountPaid,
+      discountType,
+      discountValue,
+      enableGST,
+      gstRate,
+      notes,
+      savedAt: new Date().toISOString()
+    };
+    
+    const existingDrafts = JSON.parse(localStorage.getItem('invoiceDrafts') || '[]');
+    existingDrafts.push(draft);
+    localStorage.setItem('invoiceDrafts', JSON.stringify(existingDrafts));
+    setSavedDrafts(existingDrafts);
+    alert('Draft saved successfully!');
+  };
+
+  const loadDraft = (draft: any) => {
+    setItems(draft.items);
+    setSelectedCustomer(draft.customer);
+    setCustomerSearch(draft.customer?.name || '');
+    setPaymentMethod(draft.paymentMethod);
+    setAmountPaid(draft.amountPaid);
+    setDiscountType(draft.discountType);
+    setDiscountValue(draft.discountValue);
+    setEnableGST(draft.enableGST);
+    setGstRate(draft.gstRate);
+    setNotes(draft.notes);
+  };
+
+  const clearDraft = () => {
+    if (confirm('Clear current invoice? This will remove all items and customer selection.')) {
+      setItems([]);
+      setSelectedCustomer(null);
+      setCustomerSearch('');
+      setAmountPaid(0);
+      setDiscountValue(0);
+      setNotes('');
+      setProductSearch('');
+      localStorage.removeItem('currentDraft');
+    }
+  };
+
+  // Load saved drafts on mount
+  useEffect(() => {
+    const drafts = JSON.parse(localStorage.getItem('invoiceDrafts') || '[]');
+    setSavedDrafts(drafts);
+  }, []);
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Left Side - Billing Form */}
       <div className="flex-1 p-6 overflow-y-auto">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          {/* Header with Quick Actions */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-6 mb-6 text-white">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Create New Invoice</h2>
-              <div className="text-sm text-gray-600">
+              <div className="flex items-center">
+                <div className="bg-white bg-opacity-20 p-3 rounded-lg mr-4">
+                  <Receipt className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">Create New Invoice</h2>
+                  <p className="text-blue-100">Professional billing made simple</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-blue-100 mb-1">Invoice Number</div>
+                <div className="text-xl font-bold">
+                  {generateInvoiceNumber(invoices)}
+                </div>
+              </div>
+            </div>
+            
+            {/* Quick Action Buttons */}
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={saveDraft}
+                className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg flex items-center transition-all duration-200"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save Draft
+              </button>
+              <button
+                onClick={clearDraft}
+                className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg flex items-center transition-all duration-200"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Clear All
+              </button>
+              {savedDrafts.length > 0 && (
+                <select
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const draft = savedDrafts.find(d => d.id === e.target.value);
+                      if (draft) loadDraft(draft);
+                    }
+                  }}
+                  className="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg border border-white border-opacity-30"
+                >
+                  <option value="">Load Draft</option>
+                  {savedDrafts.map(draft => (
+                    <option key={draft.id} value={draft.id} className="text-gray-900">
+                      {draft.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            {/* Progress Indicator */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                <span>Invoice Progress</span>
+                <span>{Math.round(((selectedCustomer ? 1 : 0) + (items.length > 0 ? 1 : 0)) / 2 * 100)}% Complete</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${((selectedCustomer ? 1 : 0) + (items.length > 0 ? 1 : 0)) / 2 * 100}%` }}
+                ></div>
+              </div>
+            </div>
+            
+            {/* Live Totals Summary */}
+            {(items.length > 0 || selectedCustomer) && (
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 mb-6 border border-green-200">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                  <div>
+                    <p className="text-sm text-gray-600">Items</p>
+                    <p className="text-xl font-bold text-gray-900">{items.length}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Subtotal</p>
+                    <p className="text-xl font-bold text-gray-900">{formatCurrency(subtotal)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Tax</p>
+                    <p className="text-xl font-bold text-gray-900">{formatCurrency(tax)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Total</p>
+                    <p className="text-2xl font-bold text-green-600">{formatCurrency(grandTotal)}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="text-sm text-gray-600">
                 Invoice #: {generateInvoiceNumber(invoices)}
               </div>
             </div>
@@ -383,62 +582,96 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
 
               {/* Product Search */}
               <div className="mb-4">
-                <div className="relative">
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
                   <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                   <input
                     type="text"
-                   placeholder="Search products to add quickly..."
+                    placeholder="🔍 Search products to add instantly..."
                     value={productSearch}
                     onChange={(e) => setProductSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                   />
-                 {productSearch && (
-                   <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                     {filteredProducts.slice(0, 5).map(variant => (
-                       <div
-                         key={variant.id}
-                         onClick={() => {
-                           const newItem: InvoiceItem = {
-                             productId: variant.productId,
-                             variantId: variant.id,
-                             productName: variant.productName,
-                             packSize: variant.packSize,
-                             quantity: 1,
-                             rate: variant.sellingPrice,
-                             total: variant.sellingPrice,
-                             tax: 0,
-                             discount: 0
-                           };
-                           setItems(prev => [...prev, newItem]);
-                           setProductSearch('');
-                         }}
-                         className="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                       >
-                         <div className="font-medium text-gray-900">{variant.productName}</div>
-                         <div className="text-sm text-gray-600">{variant.packSize} - {formatCurrency(variant.sellingPrice)}</div>
-                         <div className="text-xs text-gray-500">Stock: {variant.stockQuantity}</div>
-                       </div>
-                     ))}
-                   </div>
-                 )}
+                  {productSearch && (
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-y-auto">
+                      {filteredProducts.slice(0, 8).map(variant => (
+                        <div
+                          key={variant.id}
+                          onClick={() => {
+                            const newItem: InvoiceItem = {
+                              productId: variant.productId,
+                              variantId: variant.id,
+                              productName: variant.productName,
+                              packSize: variant.packSize,
+                              quantity: 1,
+                              rate: variant.sellingPrice,
+                              total: variant.sellingPrice,
+                              tax: 0,
+                              discount: 0
+                            };
+                            setItems(prev => [...prev, newItem]);
+                            setProductSearch('');
+                          }}
+                          className="p-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-all duration-200"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="font-semibold text-gray-900">{variant.productName}</div>
+                              <div className="text-sm text-gray-600">{variant.packSize} • {variant.brand}</div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  variant.stockQuantity > variant.lowStockThreshold 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                  Stock: {variant.stockQuantity}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-blue-600">{formatCurrency(variant.sellingPrice)}</div>
+                              <div className="text-xs text-gray-500">Click to add</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {filteredProducts.length === 0 && (
+                        <div className="p-4 text-center text-gray-500">
+                          <Package className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                          <p>No products found</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  </div>
+                  <button
+                    onClick={() => setQuickAddMode(!quickAddMode)}
+                    className={`px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                      quickAddMode 
+                        ? 'bg-green-600 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Quick Add
+                  </button>
                 </div>
               </div>
 
               <div className="space-y-4">
                 {items.map((item, index) => (
-                  <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                  <div key={index} className="p-4 border border-gray-200 rounded-xl bg-gradient-to-r from-gray-50 to-blue-50 hover:shadow-md transition-all duration-200">
                     <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
                       <div className="md:col-span-3">
                         <label className="block text-xs font-medium text-gray-700 mb-1">Product</label>
                         <select
                           value={item.variantId}
                           onChange={(e) => updateItem(index, 'variantId', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
                         >
                           <option value="">Select Product</option>
                           {filteredProducts.map(variant => (
                             <option key={variant.id} value={variant.id}>
-                              {variant.productName} - {variant.packSize} - {formatCurrency(variant.sellingPrice)}
+                              {variant.productName} • {variant.packSize} • {formatCurrency(variant.sellingPrice)}
                             </option>
                           ))}
                         </select>
@@ -452,7 +685,7 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                           step="1"
                           value={item.quantity}
                           onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                          className="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                          className="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-center"
                         />
                       </div>
                       <div>
@@ -464,7 +697,7 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                           step="0.01"
                           value={item.rate}
                           onChange={(e) => updateItem(index, 'rate', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                          className="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
                         />
                       </div>
                       <div>
@@ -476,38 +709,57 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                           step="0.01"
                           value={item.discount || 0}
                           onChange={(e) => updateItem(index, 'discount', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                          className="w-full px-3 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
                         />
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">Total</label>
-                          <span className="font-medium text-gray-900 text-lg">{formatCurrency(item.total)}</span>
+                          <div className="bg-green-100 px-3 py-2 rounded-lg">
+                            <span className="font-bold text-green-800 text-lg">{formatCurrency(item.total)}</span>
+                          </div>
                         </div>
                         <button
                           onClick={() => removeItem(index)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 mt-4"
+                          className="p-3 text-red-600 hover:bg-red-100 rounded-lg transition-all duration-200 mt-4 hover:scale-110"
                           title="Remove Item"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
                     </div>
                   </div>
                 ))}
+                
+                {items.length === 0 && (
+                  <div className="text-center py-12 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border-2 border-dashed border-gray-300">
+                    <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No items added yet</h3>
+                    <p className="text-gray-600 mb-4">Search and add products to create your invoice</p>
+                    <button
+                      onClick={addItem}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200"
+                    >
+                      Add First Item
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Discount Section */}
             <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Discount & Tax</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <Calculator className="w-5 h-5 mr-2 text-blue-600" />
+                Discount & Tax Calculation
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Discount Type</label>
                   <select
                     value={discountType}
                     onChange={(e) => setDiscountType(e.target.value as 'percentage' | 'amount')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
                   >
                     <option value="percentage">Percentage (%)</option>
                     <option value="amount">Fixed Amount (₹)</option>
@@ -530,22 +782,22 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                       step={discountType === 'percentage' ? 1 : 0.01}
                       value={discountValue}
                       onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
-                      className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-center"
                       placeholder={discountType === 'percentage' ? '0' : '0.00'}
                     />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Enable GST</label>
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3 mt-3">
                     <label className="flex items-center">
                       <input
                         type="checkbox"
                         checked={enableGST}
                         onChange={(e) => setEnableGST(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Add GST</span>
+                      <span className="ml-2 text-sm font-medium text-gray-700">Add GST</span>
                     </label>
                   </div>
                 </div>
@@ -556,15 +808,19 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                       type="number"
                       min="0"
                       max="50"
-                     step="0.1"
+                     step="0.01"
                       value={gstRate}
                       onChange={(e) => setGstRate(parseFloat(e.target.value) || 18)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                     placeholder="Enter any GST rate (e.g., 5, 12, 18, 28)"
+                      className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-center"
+                     placeholder="0, 5, 12, 18, 28"
                     />
                   </div>
                 )}
-                <div>
+              </div>
+              
+              {/* Payment and Balance Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Amount Paid
                   </label>
@@ -574,14 +830,16 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                     min="0"
                     step="0.01"
                     onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-lg"
                   />
                 </div>
-                <div>
+                <div className={`p-4 rounded-lg border ${balanceDue > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Balance Due
                   </label>
-                  <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 font-medium">
+                  <div className={`px-3 py-3 rounded-lg font-bold text-lg ${
+                    balanceDue > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                  }`}>
                     {formatCurrency(balanceDue)}
                   </div>
                 </div>
@@ -590,17 +848,32 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
             
             {/* Payment Section */}
             <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Payment Method</h3>
-              <select
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'upi' | 'online' | 'credit')}
-                className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="cash">Cash</option>
-                <option value="upi">UPI</option>
-                <option value="online">Online</option>
-                <option value="credit">Credit</option>
-              </select>
+              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <CreditCard className="w-5 h-5 mr-2 text-green-600" />
+                Payment Method
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { value: 'cash', label: 'Cash', icon: '💵', color: 'green' },
+                  { value: 'upi', label: 'UPI', icon: '📱', color: 'blue' },
+                  { value: 'online', label: 'Online', icon: '💳', color: 'purple' },
+                  { value: 'credit', label: 'Credit', icon: '📝', color: 'orange' }
+                ].map(method => (
+                  <button
+                    key={method.value}
+                    type="button"
+                    onClick={() => setPaymentMethod(method.value as any)}
+                    className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                      paymentMethod === method.value
+                        ? `border-${method.color}-500 bg-${method.color}-50 text-${method.color}-700`
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">{method.icon}</div>
+                    <div className="font-medium">{method.label}</div>
+                  </button>
+                ))}
+              </div>
             </div>
             
             {/* Notes */}
@@ -618,31 +891,37 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3">
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <Receipt className="w-5 h-5 mr-2 text-blue-600" />
+                Complete Invoice
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button
                 onClick={handleSaveInvoice}
                 disabled={!selectedCustomer || items.length === 0}
-                className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 text-sm font-medium"
+                className="flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
-                <Save className="w-4 h-4" />
+                <Save className="w-5 h-5" />
                 Save Invoice
               </button>
               <button
                 onClick={sendReceiptToCustomer}
                 disabled={!selectedCustomer || items.length === 0}
-                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 text-sm font-medium"
+                className="flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
-                <Phone className="w-4 h-4" />
+                <Phone className="w-5 h-5" />
                 Send to Customer
               </button>
               <button
                 onClick={shareOnWhatsApp}
                 disabled={!selectedCustomer || items.length === 0}
-                className="flex items-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 text-sm font-medium"
+                className="flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
-                <Share2 className="w-4 h-4" />
+                <Share2 className="w-5 h-5" />
                 Share Receipt
               </button>
+              </div>
             </div>
           </div>
         </div>
