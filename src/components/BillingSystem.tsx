@@ -527,10 +527,11 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                   />
                   <input
                     type="tel"
-                    placeholder="Phone Number (optional)"
+                    placeholder="Phone Number *"
                     value={newCustomer.phone}
                     onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   placeholder="Phone Number (optional)"
                   />
                   <input
                     type="email"
@@ -829,7 +830,7 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                     min="0"
                      step="0.01"
                     onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-center"
+                     placeholder="0, 5, 12, 18, 28"
                   />
                 </div>
                 <div className={`p-4 rounded-lg border ${balanceDue > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
@@ -878,7 +879,7 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
             {/* Notes */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Notes
+                Additional Notes
               </label>
               <input
                 type="text"

@@ -191,7 +191,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
         <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-2xl p-8 text-white mb-8 shadow-2xl">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold mb-2">Financial Overview</h2>
+              <h2 className="text-2xl font-bold mb-2 flex items-center">
+                <img src="/KHA.jpg" alt="KHAATA" className="w-8 h-8 rounded mr-3" />
+                Financial Overview
+              </h2>
               <p className="text-blue-100">Track your business performance</p>
             </div>
             <div className="bg-white bg-opacity-20 p-3 rounded-xl">

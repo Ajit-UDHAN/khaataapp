@@ -76,7 +76,10 @@ const CustomerManager: React.FC = () => {
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
+            <img src="/KHA.jpg" alt="KHAATA" className="w-8 h-8 rounded mr-3" />
+            Customer Management
+          </h1>
           <p className="text-gray-600">Manage your customer relationships and track purchase history</p>
         </div>
         <button

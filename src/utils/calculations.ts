@@ -154,5 +154,5 @@ export const generateInvoiceNumber = (invoices: Invoice[]): string => {
     .sort((a, b) => b - a);
   
   const nextNumber = existingNumbers.length > 0 ? existingNumbers[0] + 1 : 1;
-  return `INV-${nextNumber.toString().padStart(4, '0')}`;
+  return `KHAATA-${nextNumber.toString().padStart(4, '0')}`;
 };

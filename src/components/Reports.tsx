@@ -76,7 +76,10 @@ const Reports: React.FC = () => {
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Reports & Analytics</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
+            <img src="/KHA.jpg" alt="KHAATA" className="w-8 h-8 rounded mr-3" />
+            Reports & Analytics
+          </h1>
           <p className="text-gray-600">Gain insights into your business performance</p>
         </div>
       </div>
