@@ -209,9 +209,6 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
     // Clear draft after successful save
     localStorage.removeItem('currentDraft');
     
-    // Clear draft after successful save
-    localStorage.removeItem('currentDraft');
-    
     // Reset form
     setItems([]);
     setSelectedCustomer(null);
@@ -220,7 +217,6 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
     setDiscountValue(0);
     setNotes('');
     setProductSearch('');
-    setCurrentDraft('');
     setCurrentDraft('');
     
     alert('Invoice saved successfully!');
@@ -531,11 +527,10 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                   />
                   <input
                     type="tel"
-                    placeholder="Phone Number *"
+                    placeholder="Phone Number (optional)"
                     value={newCustomer.phone}
                     onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                   placeholder="Phone Number (optional)"
                   />
                   <input
                     type="email"
@@ -834,7 +829,7 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                     min="0"
                      step="0.01"
                     onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
-                     placeholder="0, 5, 12, 18, 28"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-center"
                   />
                 </div>
                 <div className={`p-4 rounded-lg border ${balanceDue > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
@@ -887,10 +882,10 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
               </label>
               <input
                 type="text"
+                value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Optional notes..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-               placeholder="Phone Number (optional)"
               />
             </div>
 
