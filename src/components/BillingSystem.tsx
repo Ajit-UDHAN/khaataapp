@@ -828,9 +828,9 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
                     type="number"
                     value={amountPaid}
                     min="0"
-                    step="0.01"
+                     step="0.01"
                     onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-lg"
+                     placeholder="0, 5, 12, 18, 28"
                   />
                 </div>
                 <div className={`p-4 rounded-lg border ${balanceDue > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
