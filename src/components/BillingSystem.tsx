@@ -209,6 +209,9 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
     // Clear draft after successful save
     localStorage.removeItem('currentDraft');
     
+    // Clear draft after successful save
+    localStorage.removeItem('currentDraft');
+    
     // Reset form
     setItems([]);
     setSelectedCustomer(null);
@@ -217,6 +220,7 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
     setDiscountValue(0);
     setNotes('');
     setProductSearch('');
+    setCurrentDraft('');
     setCurrentDraft('');
     
     alert('Invoice saved successfully!');
