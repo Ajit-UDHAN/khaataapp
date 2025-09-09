@@ -925,7 +925,6 @@ ${balanceDue > 0 ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}` : '✅ 
             </div>
           </div>
         </div>
-      </div>
 
       {/* Right Side - Live Receipt Preview */}
       <div className="hidden lg:block w-96 bg-gray-50 border-l border-gray-200 p-6 overflow-y-auto">
