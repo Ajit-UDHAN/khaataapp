@@ -210,57 +210,158 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Receipt</title>
+        <title>Receipt - ${businessProfile?.shopName || 'KHAATA'}</title>
         <style>
-          body { font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px; }
-          .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
-          .shop-name { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
-          .shop-details { font-size: 12px; color: #666; }
-          .customer-info { margin-bottom: 15px; padding: 10px; background: #f5f5f5; }
-          .items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-          .items-table th, .items-table td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
-          .items-table th { background: #f0f0f0; font-weight: bold; }
-          .totals { border-top: 2px solid #000; padding-top: 10px; }
-          .total-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-          .grand-total { font-weight: bold; font-size: 16px; border-top: 1px solid #000; padding-top: 5px; }
-          .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-          @media print { body { margin: 0; } }
+          body { 
+            font-family: 'Courier New', monospace; 
+            max-width: 400px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            line-height: 1.4;
+          }
+          .header { 
+            text-align: center; 
+            border-bottom: 2px solid #000; 
+            padding-bottom: 10px; 
+            margin-bottom: 15px; 
+          }
+          .shop-name { 
+            font-size: 24px; 
+            font-weight: bold; 
+            margin-bottom: 5px; 
+            text-transform: uppercase;
+          }
+          .shop-details { 
+            font-size: 12px; 
+            color: #333; 
+            margin-bottom: 3px;
+          }
+          .invoice-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 12px;
+          }
+          .customer-info { 
+            margin-bottom: 15px; 
+            padding: 10px; 
+            background: #f9f9f9; 
+            border: 1px solid #ddd;
+          }
+          .customer-info h4 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+          }
+          .items-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 15px; 
+          }
+          .items-table th, .items-table td { 
+            padding: 6px 4px; 
+            text-align: left; 
+            border-bottom: 1px solid #ddd; 
+            font-size: 11px;
+          }
+          .items-table th { 
+            background: #f0f0f0; 
+            font-weight: bold; 
+            text-transform: uppercase;
+          }
+          .item-name {
+            font-weight: bold;
+          }
+          .item-details {
+            font-size: 10px;
+            color: #666;
+          }
+          .text-right { text-align: right; }
+          .text-center { text-align: center; }
+          .totals { 
+            border-top: 2px solid #000; 
+            padding-top: 10px; 
+            margin-top: 10px;
+          }
+          .total-row { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 3px; 
+            font-size: 12px;
+          }
+          .grand-total { 
+            font-weight: bold; 
+            font-size: 16px; 
+            border-top: 1px solid #000; 
+            padding-top: 5px; 
+            margin-top: 5px;
+          }
+          .payment-info {
+            margin-top: 10px;
+            padding: 8px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+          }
+          .footer { 
+            text-align: center; 
+            margin-top: 20px; 
+            font-size: 11px; 
+            color: #666; 
+            border-top: 1px dashed #999;
+            padding-top: 10px;
+          }
+          .thank-you {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+          }
+          @media print { 
+            body { margin: 0; padding: 10px; } 
+            .no-print { display: none; }
+          }
         </style>
       </head>
       <body>
         <div class="header">
           <div class="shop-name">${businessProfile?.shopName || 'KHAATA'}</div>
-          <div class="shop-details">
-            ${businessProfile?.businessAddress || ''}<br>
-            ${businessProfile?.contactNumber || ''}<br>
-            ${businessProfile?.gstNumber ? `GST: ${businessProfile.gstNumber}` : ''}
+          <div class="shop-details">${businessProfile?.businessAddress || ''}</div>
+          <div class="shop-details">Phone: ${businessProfile?.contactNumber || ''}</div>
+          ${businessProfile?.gstNumber ? `<div class="shop-details">GST: ${businessProfile.gstNumber}</div>` : ''}
+        </div>
+
+        <div class="invoice-info">
+          <div>
+            <strong>Invoice:</strong> ${generateInvoiceNumber(invoices)}<br>
+            <strong>Date:</strong> ${new Date().toLocaleDateString()}<br>
+            <strong>Time:</strong> ${new Date().toLocaleTimeString()}
           </div>
         </div>
 
         <div class="customer-info">
-          <strong>Customer:</strong> ${selectedCustomer?.name || 'Walk-in Customer'}<br>
+          <h4>Bill To:</h4>
+          <strong>${selectedCustomer?.name || 'Walk-in Customer'}</strong><br>
           ${selectedCustomer?.phone ? `Phone: ${selectedCustomer.phone}<br>` : ''}
-          ${selectedCustomer?.address ? `Address: ${selectedCustomer.address}<br>` : ''}
-          <strong>Date:</strong> ${new Date().toLocaleDateString()}<br>
-          <strong>Time:</strong> ${new Date().toLocaleTimeString()}
+          ${selectedCustomer?.address ? `${selectedCustomer.address}<br>` : ''}
         </div>
 
         <table class="items-table">
           <thead>
             <tr>
-              <th>Item</th>
-              <th>Qty</th>
-              <th>Rate</th>
-              <th>Amount</th>
+              <th style="width: 40%">Item</th>
+              <th style="width: 15%" class="text-center">Qty</th>
+              <th style="width: 20%" class="text-right">Rate</th>
+              <th style="width: 25%" class="text-right">Amount</th>
             </tr>
           </thead>
           <tbody>
             ${selectedItems.map(item => `
               <tr>
-                <td>${item.productName}<br><small>${item.packSize}</small></td>
-                <td>${item.quantity}</td>
-                <td>${formatCurrency(item.rate)}</td>
-                <td>${formatCurrency(item.total)}</td>
+                <td>
+                  <div class="item-name">${item.productName}</div>
+                  <div class="item-details">${item.packSize}</div>
+                </td>
+                <td class="text-center">${item.quantity}</td>
+                <td class="text-right">${formatCurrency(item.rate)}</td>
+                <td class="text-right"><strong>${formatCurrency(item.total)}</strong></td>
               </tr>
             `).join('')}
           </tbody>
@@ -273,8 +374,12 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
           </div>
           ${discountAmount > 0 ? `
             <div class="total-row">
-              <span>Discount:</span>
+              <span>Discount (${discountType === 'percentage' ? discount + '%' : 'Fixed'}):</span>
               <span>-${formatCurrency(discountAmount)}</span>
+            </div>
+            <div class="total-row">
+              <span>After Discount:</span>
+              <span>${formatCurrency(taxableAmount)}</span>
             </div>
           ` : ''}
           <div class="total-row">
@@ -282,20 +387,38 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
             <span>${formatCurrency(taxAmount)}</span>
           </div>
           <div class="total-row grand-total">
-            <span>Grand Total:</span>
+            <span>GRAND TOTAL:</span>
             <span>${formatCurrency(grandTotal)}</span>
-          </div>
-          <div class="total-row">
-            <span>Payment Method:</span>
-            <span>${paymentType.toUpperCase()}</span>
           </div>
         </div>
 
-        ${notes ? `<div style="margin-top: 15px;"><strong>Notes:</strong> ${notes}</div>` : ''}
+        <div class="payment-info">
+          <div class="total-row">
+            <span><strong>Payment Method:</strong></span>
+            <span><strong>${paymentType.toUpperCase()}</strong></span>
+          </div>
+          <div class="total-row">
+            <span>Amount Paid:</span>
+            <span>${formatCurrency(paymentType === 'credit' ? 0 : grandTotal)}</span>
+          </div>
+          ${paymentType === 'credit' ? `
+            <div class="total-row" style="color: #d32f2f;">
+              <span><strong>Balance Due:</strong></span>
+              <span><strong>${formatCurrency(grandTotal)}</strong></span>
+            </div>
+          ` : ''}
+        </div>
+
+        ${notes ? `
+          <div style="margin-top: 15px; padding: 8px; background: #f9f9f9; border: 1px solid #ddd;">
+            <strong>Notes:</strong> ${notes}
+          </div>
+        ` : ''}
 
         <div class="footer">
-          Thank you for your business!<br>
-          Generated by KHAATA Business Management System
+          <div class="thank-you">Thank You for Your Business!</div>
+          <div>Visit Again Soon</div>
+          <div style="margin-top: 10px;">Powered by KHAATA Business Management</div>
         </div>
       </body>
       </html>
@@ -303,25 +426,44 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
   };
 
   const generateWhatsAppMessage = () => {
-    return `*${businessProfile?.shopName || 'KHAATA'} - RECEIPT*
+    return `*${businessProfile?.shopName || 'KHAATA'} - INVOICE*
 
-*Customer:* ${selectedCustomer?.name}
-*Date:* ${new Date().toLocaleDateString()}
-*Time:* ${new Date().toLocaleTimeString()}
+📋 *Invoice:* ${generateInvoiceNumber(invoices)}
+📅 *Date:* ${new Date().toLocaleDateString()}
+🕐 *Time:* ${new Date().toLocaleTimeString()}
 
-*ITEMS:*
-${selectedItems.map(item => 
-  `• ${item.productName} (${item.packSize})\n  ${item.quantity} x ${formatCurrency(item.rate)} = ${formatCurrency(item.total)}`
-).join('\n')}
+👤 *Customer:* ${selectedCustomer?.name}
+${selectedCustomer?.phone ? `📞 *Phone:* ${selectedCustomer.phone}` : ''}
 
-*BILL SUMMARY:*
-Subtotal: ${formatCurrency(subtotal)}${discountAmount > 0 ? `\nDiscount: -${formatCurrency(discountAmount)}` : ''}
+*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*
+
+📦 *ITEMS:*
+${selectedItems.map((item, index) => 
+  `${index + 1}. *${item.productName}*
+   📏 Size: ${item.packSize}
+   🔢 Qty: ${item.quantity} × ${formatCurrency(item.rate)} = *${formatCurrency(item.total)}*`
+).join('\n\n')}
+
+*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*
+
+💰 *BILL SUMMARY:*
+Subtotal: ${formatCurrency(subtotal)}${discountAmount > 0 ? `
+Discount: -${formatCurrency(discountAmount)}
+After Discount: ${formatCurrency(taxableAmount)}` : ''}
 GST (${gstRate}%): ${formatCurrency(taxAmount)}
-*Grand Total: ${formatCurrency(grandTotal)}*
 
-Payment: ${paymentType.toUpperCase()}${notes ? `\n\nNotes: ${notes}` : ''}
+*🎯 GRAND TOTAL: ${formatCurrency(grandTotal)}*
 
-Thank you for your business! 🙏`;
+💳 *Payment:* ${paymentType.toUpperCase()}
+${paymentType === 'credit' ? `⚠️ *Balance Due:* ${formatCurrency(grandTotal)}` : '✅ *Paid:* ${formatCurrency(grandTotal)}'}
+
+${notes ? `📝 *Notes:* ${notes}\n` : ''}
+*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*
+
+🙏 Thank you for your business!
+🔄 Visit again soon!
+
+_Powered by KHAATA Business Management_`;
   };
 
   return (
@@ -531,7 +673,7 @@ Thank you for your business! 🙏`;
                     onChange={(e) => setGstRate(parseInt(e.target.value) || 0)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  <div className="flex gap-1 mt-2">
+                  <div className="flex flex-wrap gap-1 mt-2">
                     {[0, 5, 12, 18, 28].map(rate => (
                       <button
                         key={rate}
@@ -627,7 +769,7 @@ Thank you for your business! 🙏`;
 
           {/* Right Side - Live Receipt Preview */}
           <div className="hidden lg:block w-96 bg-gray-50 border-l border-gray-200 p-6 overflow-y-auto">
-            <div className="sticky top-0 bg-white pb-4">
+            <div className="sticky top-0 bg-gray-50 pb-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Receipt className="w-5 h-5 mr-2" />
                 Live Receipt Preview
@@ -637,24 +779,35 @@ Thank you for your business! 🙏`;
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 font-mono text-sm">
               {/* Receipt Header */}
               <div className="text-center border-b-2 border-gray-800 pb-4 mb-4">
-                <h2 className="text-xl font-bold">{businessProfile?.shopName || 'KHAATA'}</h2>
+                <h2 className="text-xl font-bold uppercase">{businessProfile?.shopName || 'KHAATA'}</h2>
                 {businessProfile?.businessAddress && (
                   <p className="text-xs text-gray-600 mt-1">{businessProfile.businessAddress}</p>
                 )}
                 {businessProfile?.contactNumber && (
-                  <p className="text-xs text-gray-600">Ph: {businessProfile.contactNumber}</p>
+                  <p className="text-xs text-gray-600">Phone: {businessProfile.contactNumber}</p>
                 )}
                 {businessProfile?.gstNumber && (
                   <p className="text-xs text-gray-600">GST: {businessProfile.gstNumber}</p>
                 )}
               </div>
 
+              {/* Invoice Info */}
+              <div className="mb-4 text-xs">
+                <div className="flex justify-between">
+                  <span>Invoice: {generateInvoiceNumber(invoices)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Date: {new Date().toLocaleDateString()}</span>
+                  <span>Time: {new Date().toLocaleTimeString()}</span>
+                </div>
+              </div>
+
               {/* Customer Info */}
               <div className="mb-4 p-3 bg-gray-50 rounded">
-                <p><strong>Customer:</strong> {selectedCustomer?.name || 'Select Customer'}</p>
-                {selectedCustomer?.phone && <p><strong>Phone:</strong> {selectedCustomer.phone}</p>}
-                <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
-                <p><strong>Time:</strong> {new Date().toLocaleTimeString()}</p>
+                <p className="font-bold">Bill To:</p>
+                <p><strong>{selectedCustomer?.name || 'Select Customer'}</strong></p>
+                {selectedCustomer?.phone && <p>Phone: {selectedCustomer.phone}</p>}
+                {selectedCustomer?.address && <p>{selectedCustomer.address}</p>}
               </div>
 
               {/* Items */}
@@ -694,23 +847,35 @@ Thank you for your business! 🙏`;
                       <span>{formatCurrency(subtotal)}</span>
                     </div>
                     {discountAmount > 0 && (
-                      <div className="flex justify-between">
-                        <span>Discount:</span>
-                        <span>-{formatCurrency(discountAmount)}</span>
-                      </div>
+                      <>
+                        <div className="flex justify-between">
+                          <span>Discount ({discountType === 'percentage' ? discount + '%' : 'Fixed'}):</span>
+                          <span>-{formatCurrency(discountAmount)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>After Discount:</span>
+                          <span>{formatCurrency(taxableAmount)}</span>
+                        </div>
+                      </>
                     )}
                     <div className="flex justify-between">
                       <span>GST ({gstRate}%):</span>
                       <span>{formatCurrency(taxAmount)}</span>
                     </div>
                     <div className="flex justify-between font-bold text-base border-t border-gray-400 pt-2">
-                      <span>TOTAL:</span>
+                      <span>GRAND TOTAL:</span>
                       <span>{formatCurrency(grandTotal)}</span>
                     </div>
-                    <div className="flex justify-between text-xs">
-                      <span>Payment:</span>
-                      <span>{paymentType.toUpperCase()}</span>
+                    <div className="flex justify-between text-xs mt-2 p-2 bg-gray-100 rounded">
+                      <span>Payment Method:</span>
+                      <span className="font-medium">{paymentType.toUpperCase()}</span>
                     </div>
+                    {paymentType === 'credit' && (
+                      <div className="flex justify-between text-xs text-red-600 font-medium">
+                        <span>Balance Due:</span>
+                        <span>{formatCurrency(grandTotal)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -722,8 +887,9 @@ Thank you for your business! 🙏`;
               )}
 
               <div className="text-center mt-6 pt-4 border-t border-gray-400 text-xs text-gray-600">
-                Thank you for your business!<br />
-                Powered by KHAATA
+                <div className="font-bold mb-1">Thank You for Your Business!</div>
+                <div>Visit Again Soon</div>
+                <div className="mt-2">Powered by KHAATA</div>
               </div>
             </div>
           </div>
