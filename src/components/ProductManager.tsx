@@ -1,21 +1,5 @@
 import React, { useState } from 'react';
-import { 
-  Package, 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  AlertTriangle,
-  Filter,
-  X,
-  Star,
-  TrendingUp,
-  BarChart3,
-  ShoppingCart,
-  Eye,
-  Copy,
-  Save
-} from 'lucide-react';
+import { Package, Plus, Search, CreditCard as Edit, Trash2, AlertTriangle, Filter, X, Star, TrendingUp, BarChart3, ShoppingCart, Eye, Copy, Save } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { Product, ProductVariant } from '../types';
 import { formatCurrency } from '../utils/calculations';
