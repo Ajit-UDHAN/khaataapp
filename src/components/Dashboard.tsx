@@ -310,7 +310,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                   <p className="text-gray-400 text-sm">Create your first invoice to get started</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="overflow-y-auto max-h-96 space-y-4">
                   {recentInvoices.map((invoice) => (
                     <div key={invoice.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl hover:shadow-md transition-all duration-200">
                       <div>
@@ -363,7 +363,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                   <p className="text-gray-400 text-sm">Great job managing your inventory</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="overflow-y-auto max-h-96 space-y-4">
                   {lowStockProducts.map((product) => (
                     <div key={product.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-orange-50 rounded-xl border-l-4 border-red-400 hover:shadow-md transition-all duration-200">
                       <div>

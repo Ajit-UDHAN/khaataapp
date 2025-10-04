@@ -600,8 +600,8 @@ _Powered by KHAATA Business Management_`;
                   <ShoppingCart className="w-5 h-5 mr-2" />
                   Bill Items ({selectedItems.length})
                 </h2>
-                
-                <div className="space-y-3">
+
+                <div className="max-h-[400px] overflow-y-auto space-y-3">
                   {selectedItems.map((item, index) => (
                     <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                       <div className="flex-1">
