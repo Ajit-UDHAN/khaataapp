@@ -1,16 +1,5 @@
 import React, { useState } from 'react';
-import { 
-  Settings as SettingsIcon, 
-  Store, 
-  User, 
-  Bell, 
-  Shield, 
-  Download, 
-  Upload,
-  Trash2,
-  Save,
-  Edit
-} from 'lucide-react';
+import { Settings as SettingsIcon, Store, User, Bell, Shield, Download, Upload, Trash2, Save, CreditCard as Edit } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import BusinessProfileSetup from './BusinessProfileSetup';
 
