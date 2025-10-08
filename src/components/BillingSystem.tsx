@@ -34,6 +34,7 @@ const BillingSystem: React.FC<BillingSystemProps> = ({ onViewChange }) => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [gstRate, setGstRate] = useState(18);
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('percentage');
@@ -528,8 +529,21 @@ _Powered by KHAATA Business Management_`;
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {customers.slice(0, 4).map(customer => (
+                  <div className="relative mb-3">
+                    <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Search customers by name or phone..."
+                      value={customerSearchTerm}
+                      onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-48 overflow-y-auto">
+                    {customers.filter(c =>
+                      c.name.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+                      c.phone.toLowerCase().includes(customerSearchTerm.toLowerCase())
+                    ).map(customer => (
                       <button
                         key={customer.id}
                         onClick={() => setSelectedCustomer(customer)}
