@@ -1,6 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Product, Customer, Invoice, Expense, ExpenseCategory } from '../types';
+import { useAuth } from './AuthContext';
 
 interface AppContextType {
   products: Product[];
@@ -30,11 +31,14 @@ interface AppProviderProps {
 }
 
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
-  const [products, setProducts] = useLocalStorage<Product[]>('products', []);
-  const [customers, setCustomers] = useLocalStorage<Customer[]>('customers', []);
-  const [invoices, setInvoices] = useLocalStorage<Invoice[]>('invoices', []);
-  const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', []);
-  const [expenseCategories, setExpenseCategories] = useLocalStorage<ExpenseCategory[]>('expenseCategories', []);
+  const { user } = useAuth();
+  const userId = user?.id || 'guest';
+
+  const [products, setProducts] = useLocalStorage<Product[]>(`${userId}_products`, []);
+  const [customers, setCustomers] = useLocalStorage<Customer[]>(`${userId}_customers`, []);
+  const [invoices, setInvoices] = useLocalStorage<Invoice[]>(`${userId}_invoices`, []);
+  const [expenses, setExpenses] = useLocalStorage<Expense[]>(`${userId}_expenses`, []);
+  const [expenseCategories, setExpenseCategories] = useLocalStorage<ExpenseCategory[]>(`${userId}_expenseCategories`, []);
 
   return (
     <AppContext.Provider
