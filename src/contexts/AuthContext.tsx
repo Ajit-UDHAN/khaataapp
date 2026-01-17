@@ -32,15 +32,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Check for existing session
     const savedUser = localStorage.getItem('currentUser');
-    const savedProfile = localStorage.getItem('businessProfile');
-    
+
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      const user = JSON.parse(savedUser);
+      setUser(user);
+
+      // Load business profile for this user
+      const savedProfile = localStorage.getItem(`${user.id}_businessProfile`);
+      if (savedProfile) {
+        setBusinessProfile(JSON.parse(savedProfile));
+      }
     }
-    if (savedProfile) {
-      setBusinessProfile(JSON.parse(savedProfile));
-    }
-    
+
     setIsLoading(false);
   }, []);
 
