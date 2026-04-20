@@ -1,7 +1,7 @@
-import React, { createContext, useContext, ReactNode } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Product, Customer, Invoice, Expense, ExpenseCategory } from '../types';
 import { useAuth } from './AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface AppContextType {
   products: Product[];
@@ -14,6 +14,7 @@ interface AppContextType {
   setExpenses: (expenses: Expense[] | ((prev: Expense[]) => Expense[])) => void;
   expenseCategories: ExpenseCategory[];
   setExpenseCategories: (categories: ExpenseCategory[] | ((prev: ExpenseCategory[]) => ExpenseCategory[])) => void;
+  isLoadingData: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -32,13 +33,135 @@ interface AppProviderProps {
 
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const { user } = useAuth();
-  const userId = user?.id || 'guest';
 
-  const [products, setProducts] = useLocalStorage<Product[]>(`${userId}_products`, []);
-  const [customers, setCustomers] = useLocalStorage<Customer[]>(`${userId}_customers`, []);
-  const [invoices, setInvoices] = useLocalStorage<Invoice[]>(`${userId}_invoices`, []);
-  const [expenses, setExpenses] = useLocalStorage<Expense[]>(`${userId}_expenses`, []);
-  const [expenseCategories, setExpenseCategories] = useLocalStorage<ExpenseCategory[]>(`${userId}_expenseCategories`, []);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const loadData = async () => {
+      setIsLoadingData(true);
+      try {
+        // Load products
+        const { data: productsData } = await supabase
+          .from('products')
+          .select('*, product_variants(*)')
+          .eq('user_id', user.id);
+
+        if (productsData) {
+          const mappedProducts: Product[] = productsData.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            variants: p.product_variants.map((v: any) => ({
+              id: v.id,
+              packSize: v.pack_size,
+              unitPrice: parseFloat(v.unit_price),
+              stockQuantity: v.stock_quantity,
+              lowStockThreshold: v.low_stock_threshold
+            }))
+          }));
+          setProducts(mappedProducts);
+        }
+
+        // Load customers
+        const { data: customersData } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (customersData) {
+          const mappedCustomers: Customer[] = customersData.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            phone: c.phone,
+            email: c.email,
+            creditLimit: parseFloat(c.credit_limit),
+            creditUsed: parseFloat(c.credit_used)
+          }));
+          setCustomers(mappedCustomers);
+        }
+
+        // Load invoices
+        const { data: invoicesData } = await supabase
+          .from('invoices')
+          .select('*, invoice_items(*)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (invoicesData) {
+          const mappedInvoices: Invoice[] = invoicesData.map((i: any) => ({
+            id: i.id,
+            invoiceNumber: i.invoice_number,
+            customerId: i.customer_id,
+            customerName: i.customer_name,
+            subtotal: parseFloat(i.subtotal),
+            discountPercentage: i.discount_percentage,
+            discountAmount: parseFloat(i.discount_amount),
+            taxPercentage: i.tax_percentage,
+            taxAmount: parseFloat(i.tax_amount),
+            grandTotal: parseFloat(i.grand_total),
+            status: i.status,
+            items: i.invoice_items.map((it: any) => ({
+              id: it.id,
+              productVariantId: it.product_variant_id,
+              productName: it.product_name,
+              packSize: it.pack_size,
+              quantity: it.quantity,
+              unitPrice: parseFloat(it.unit_price),
+              totalPrice: parseFloat(it.total_price)
+            })),
+            notes: i.notes,
+            createdAt: i.created_at
+          }));
+          setInvoices(mappedInvoices);
+        }
+
+        // Load expense categories
+        const { data: categoriesData } = await supabase
+          .from('expense_categories')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (categoriesData) {
+          const mappedCategories: ExpenseCategory[] = categoriesData.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            color: c.color
+          }));
+          setExpenseCategories(mappedCategories);
+        }
+
+        // Load expenses
+        const { data: expensesData } = await supabase
+          .from('expenses')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (expensesData) {
+          const mappedExpenses: Expense[] = expensesData.map((e: any) => ({
+            id: e.id,
+            categoryId: e.category_id,
+            description: e.description,
+            amount: parseFloat(e.amount),
+            date: e.date
+          }));
+          setExpenses(mappedExpenses);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    loadData();
+  }, [user]);
 
   return (
     <AppContext.Provider
@@ -53,6 +176,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         setExpenses,
         expenseCategories,
         setExpenseCategories,
+        isLoadingData,
       }}
     >
       {children}

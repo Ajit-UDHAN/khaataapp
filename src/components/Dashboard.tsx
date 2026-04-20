@@ -304,25 +304,24 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
             </div>
             <div className="p-6">
               {recentInvoices.length === 0 ? (
-                <div className="text-center py-12">
-                  <Receipt className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg">No invoices yet</p>
+                <div className="text-center py-8">
+                  <Receipt className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No invoices yet</p>
                   <p className="text-gray-400 text-sm">Create your first invoice to get started</p>
                 </div>
               ) : (
-                <div className="overflow-y-auto max-h-96 space-y-4">
+                <div className="space-y-3 max-h-64 overflow-y-auto">
                   {recentInvoices.map((invoice) => (
-                    <div key={invoice.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl hover:shadow-md transition-all duration-200">
-                      <div>
-                        <p className="font-semibold text-gray-900">{invoice.customerName}</p>
-                        <p className="text-sm text-gray-600">{invoice.invoiceNumber}</p>
-                        <p className="text-xs text-gray-500">{new Date(invoice.createdAt).toLocaleDateString()}</p>
+                    <div key={invoice.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg hover:shadow-md transition-all duration-200">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-900 text-sm truncate">{invoice.customerName}</p>
+                        <p className="text-xs text-gray-600">{invoice.invoiceNumber}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-gray-900 text-lg">{formatCurrency(invoice.grandTotal)}</p>
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                          invoice.status === 'paid' 
-                            ? 'bg-green-100 text-green-800' 
+                      <div className="text-right ml-2">
+                        <p className="font-bold text-gray-900 text-sm">{formatCurrency(invoice.grandTotal)}</p>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          invoice.status === 'paid'
+                            ? 'bg-green-100 text-green-800'
                             : invoice.status === 'credit'
                             ? 'bg-red-100 text-red-800'
                             : 'bg-yellow-100 text-yellow-800'
@@ -355,23 +354,23 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
             </div>
             <div className="p-6">
               {lowStockProducts.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Package className="w-8 h-8 text-green-600" />
+                <div className="text-center py-8">
+                  <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Package className="w-6 h-6 text-green-600" />
                   </div>
-                  <p className="text-green-600 text-lg font-semibold">All products are well stocked!</p>
-                  <p className="text-gray-400 text-sm">Great job managing your inventory</p>
+                  <p className="text-green-600 font-semibold text-sm">All products well stocked!</p>
+                  <p className="text-gray-400 text-xs">Great inventory management</p>
                 </div>
               ) : (
-                <div className="overflow-y-auto max-h-96 space-y-4">
+                <div className="space-y-3 max-h-64 overflow-y-auto">
                   {lowStockProducts.map((product) => (
-                    <div key={product.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-orange-50 rounded-xl border-l-4 border-red-400 hover:shadow-md transition-all duration-200">
-                      <div>
-                        <p className="font-semibold text-gray-900">{product.productName}</p>
-                        <p className="text-sm text-gray-600">{product.packSize}</p>
+                    <div key={product.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border-l-4 border-red-400 hover:shadow-md transition-all duration-200">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-900 text-sm truncate">{product.productName}</p>
+                        <p className="text-xs text-gray-600">{product.packSize}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-red-600 text-lg">{product.stockQuantity} left</p>
+                      <div className="text-right ml-2">
+                        <p className="font-bold text-red-600 text-sm">{product.stockQuantity} left</p>
                         <p className="text-xs text-gray-500">Min: {product.lowStockThreshold}</p>
                       </div>
                     </div>

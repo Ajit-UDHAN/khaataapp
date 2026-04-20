@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, BusinessProfile } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -7,7 +8,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => void;
-  updateBusinessProfile: (profile: Omit<BusinessProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => void;
+  updateBusinessProfile: (profile: Omit<BusinessProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,73 +31,109 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session
-    const savedUser = localStorage.getItem('currentUser');
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
 
-    if (savedUser) {
-      const user = JSON.parse(savedUser);
-      setUser(user);
+        if (session?.user) {
+          const userData: User = {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+            createdAt: session.user.created_at || new Date().toISOString()
+          };
+          setUser(userData);
 
-      // Load business profile for this user
-      const savedProfile = localStorage.getItem(`${user.id}_businessProfile`);
-      if (savedProfile) {
-        setBusinessProfile(JSON.parse(savedProfile));
+          // Load business profile from database
+          const { data: profile } = await supabase
+            .from('business_profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          if (profile) {
+            setBusinessProfile({
+              id: profile.id,
+              userId: profile.user_id,
+              businessName: profile.business_name,
+              ownerName: profile.owner_name,
+              email: profile.email,
+              phone: profile.phone,
+              address: profile.address,
+              city: profile.city,
+              gstNumber: profile.gst_number,
+              createdAt: profile.created_at,
+              updatedAt: profile.updated_at
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
 
-    setIsLoading(false);
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string, name?: string) => {
     setIsLoading(true);
     try {
-      // Create consistent user ID from email
-      const userId = btoa(email).replace(/[^a-zA-Z0-9]/g, '');
-      
-      // Check if user exists for signin
-      const existingUserData = localStorage.getItem(`user_${userId}`);
-      
-      if (!name && !existingUserData) {
-        throw new Error('User not found. Please sign up first.');
-      }
-      
-      if (name && existingUserData) {
-        throw new Error('User already exists. Please sign in instead.');
-      }
-      
-      let userData: User;
-      
-      if (existingUserData) {
-        // Existing user - verify password
-        const storedData = JSON.parse(existingUserData);
-        if (storedData.password !== btoa(password)) {
-          throw new Error('Invalid password');
-        }
-        userData = storedData.user;
-      } else {
-        // New user - create account
-        userData = {
-          id: userId,
+      let session;
+
+      if (name) {
+        // Sign up
+        const { data, error } = await supabase.auth.signUp({
           email,
-          name: name || email.split('@')[0],
-          createdAt: new Date().toISOString()
-        };
-        
-        // Store user data with password
-        localStorage.setItem(`user_${userId}`, JSON.stringify({
-          user: userData,
-          password: btoa(password)
-        }));
+          password,
+          options: {
+            data: { name }
+          }
+        });
+        if (error) throw error;
+        session = data.session;
+      } else {
+        // Sign in
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        if (error) throw error;
+        session = data.session;
       }
-      
-      setUser(userData);
-      localStorage.setItem('currentUser', JSON.stringify(userData));
-      
-      // Check for existing business profile
-      const existingProfile = localStorage.getItem(`${userData.id}_businessProfile`);
-      if (existingProfile) {
-        const profile = JSON.parse(existingProfile);
-        setBusinessProfile(profile);
+
+      if (session?.user) {
+        const userData: User = {
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata?.name || email.split('@')[0],
+          createdAt: session.user.created_at || new Date().toISOString()
+        };
+        setUser(userData);
+
+        // Load existing business profile
+        const { data: profile } = await supabase
+          .from('business_profiles')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (profile) {
+          setBusinessProfile({
+            id: profile.id,
+            userId: profile.user_id,
+            businessName: profile.business_name,
+            ownerName: profile.owner_name,
+            email: profile.email,
+            phone: profile.phone,
+            address: profile.address,
+            city: profile.city,
+            gstNumber: profile.gst_number,
+            createdAt: profile.created_at,
+            updatedAt: profile.updated_at
+          });
+        }
       }
     } catch (error) {
       throw error;
@@ -105,53 +142,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const login_old = async (email: string, password: string) => {
-    setIsLoading(true);
+  const logout = async () => {
     try {
-      const mockUser: User = {
-        id: btoa(email).replace(/[^a-zA-Z0-9]/g, ''), // Create consistent ID from email
-        email,
-        name: email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1),
-        createdAt: new Date().toISOString()
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem('currentUser', JSON.stringify(mockUser));
-      
-      // Check for existing business profile
-      const existingProfile = localStorage.getItem(`${mockUser.id}_businessProfile`);
-      if (existingProfile) {
-        const profile = JSON.parse(existingProfile);
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    setUser(null);
+    setBusinessProfile(null);
+  };
+
+  const updateBusinessProfile = async (profileData: Omit<BusinessProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('business_profiles')
+        .upsert({
+          user_id: user.id,
+          business_name: profileData.businessName,
+          owner_name: profileData.ownerName,
+          email: profileData.email,
+          phone: profileData.phone,
+          address: profileData.address,
+          city: profileData.city,
+          gst_number: profileData.gstNumber,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        })
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        const profile: BusinessProfile = {
+          id: data.id,
+          userId: data.user_id,
+          businessName: data.business_name,
+          ownerName: data.owner_name,
+          email: data.email,
+          phone: data.phone,
+          address: data.address,
+          city: data.city,
+          gstNumber: data.gst_number,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at
+        };
         setBusinessProfile(profile);
       }
     } catch (error) {
-      throw new Error('Login failed');
-    } finally {
-      setIsLoading(false);
+      console.error('Update business profile error:', error);
+      throw error;
     }
-  };
-
-  const logout = () => {
-    setUser(null);
-    setBusinessProfile(null);
-    localStorage.removeItem('currentUser');
-    // Note: User-specific data remains in localStorage with user ID prefix
-    // This allows users to log back in and see their data
-  };
-
-  const updateBusinessProfile = (profileData: Omit<BusinessProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
-    if (!user) return;
-    
-    const profile: BusinessProfile = {
-      id: businessProfile?.id || Date.now().toString(),
-      userId: user.id,
-      ...profileData,
-      createdAt: businessProfile?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    setBusinessProfile(profile);
-    localStorage.setItem(`${user.id}_businessProfile`, JSON.stringify(profile));
   };
 
   return (

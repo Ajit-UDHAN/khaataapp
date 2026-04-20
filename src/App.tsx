@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AppProvider } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginScreen from './components/LoginScreen';
@@ -12,21 +12,10 @@ import CustomerManager from './components/CustomerManager';
 import Reports from './components/Reports';
 import ExpenseManager from './components/ExpenseManager';
 import Settings from './components/Settings';
-import { sampleProducts, sampleCustomers, sampleInvoices, sampleExpenses, sampleExpenseCategories } from './utils/sampleData';
 
 const AppContent: React.FC = () => {
   const { user, businessProfile, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState('dashboard');
-
-  // Initialize expense categories if they don't exist
-  useEffect(() => {
-    if (user) {
-      const userExpenseCategoriesKey = `${user.id}_expenseCategories`;
-      if (!localStorage.getItem(userExpenseCategoriesKey)) {
-        localStorage.setItem(userExpenseCategoriesKey, JSON.stringify(sampleExpenseCategories));
-      }
-    }
-  }, [user]);
 
   if (isLoading) {
     return (
