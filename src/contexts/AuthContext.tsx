@@ -7,6 +7,7 @@ interface AuthContextType {
   businessProfile: BusinessProfile | null;
   isLoading: boolean;
   login: (email: string, password: string, name?: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => void;
   updateBusinessProfile: (profile: Omit<BusinessProfile, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
 }
@@ -123,7 +124,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
         if (error) throw error;
 
-        if (data.session?.user) {
+        // If no session returned, the email likely already exists
+        // or email confirmation is required. Fall back to sign-in.
+        if (!data.session?.user) {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+          if (signInError) {
+            throw new Error('This email is already registered but the password doesn\'t match. If you forgot your password, use the "Forgot Password" link.');
+          }
+          if (signInData.session?.user) {
+            const userData: User = {
+              id: signInData.session.user.id,
+              email: signInData.session.user.email || '',
+              name: (signInData.session.user.user_metadata as any)?.name || email.split('@')[0],
+              createdAt: signInData.session.user.created_at || new Date().toISOString()
+            };
+            setUser(userData);
+
+            const { data: profile } = await supabase
+              .from('business_profiles')
+              .select('*')
+              .eq('user_id', signInData.session.user.id)
+              .maybeSingle();
+
+            if (profile) {
+              setBusinessProfile(mapProfile(profile));
+            }
+          }
+        } else {
           const userData: User = {
             id: data.session.user.id,
             email: data.session.user.email || '',
@@ -164,6 +194,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) throw error;
   };
 
   const logout = async () => {
@@ -214,6 +249,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         businessProfile,
         isLoading,
         login,
+        resetPassword,
         logout,
         updateBusinessProfile,
       }}

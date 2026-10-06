@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, Store, ArrowRight, UserPlus, LogIn, User } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, UserPlus, LogIn, User, KeyRound, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const LoginScreen: React.FC = () => {
-  const { login, isLoading } = useAuth();
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const { login, resetPassword, isLoading } = useAuth();
+  const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -36,6 +36,11 @@ const LoginScreen: React.FC = () => {
       setError('Please enter a valid email address');
       return false;
     }
+
+    if (authMode === 'signin' && !formData.password) {
+      setError('Password is required');
+      return false;
+    }
     
     return true;
   };
@@ -48,6 +53,12 @@ const LoginScreen: React.FC = () => {
     if (!validateForm()) return;
 
     try {
+      if (authMode === 'forgot') {
+        await resetPassword(formData.email);
+        setSuccess('Password reset link sent! Check your email inbox.');
+        return;
+      }
+
       if (authMode === 'signup') {
         setSuccess('Creating your account...');
         await login(formData.email, formData.password, formData.name);
@@ -56,15 +67,18 @@ const LoginScreen: React.FC = () => {
       }
     } catch (err: any) {
       const message = err?.message || '';
+      setSuccess('');
       if (authMode === 'signup') {
-        if (message.toLowerCase().includes('already') || message.toLowerCase().includes('registered')) {
-          setError('This email is already registered. Please sign in instead.');
+        if (message.toLowerCase().includes('already') || message.toLowerCase().includes('registered') || message.toLowerCase().includes("doesn't match")) {
+          setError(message);
         } else {
           setError(message || 'Unable to create account. Please try again.');
         }
+      } else if (authMode === 'forgot') {
+        setError(message || 'Unable to send reset link. Please try again.');
       } else {
         if (message.toLowerCase().includes('invalid')) {
-          setError('Invalid email or password. If you don\'t have an account, please sign up first.');
+          setError('Wrong email or password. If you don\'t have an account yet, tap "Sign Up" to create one. Forgot your password? Tap "Forgot Password".');
         } else {
           setError(message || 'Unable to sign in. Please check your credentials.');
         }
@@ -72,17 +86,19 @@ const LoginScreen: React.FC = () => {
     }
   };
 
-  const switchAuthMode = () => {
-    setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
+  const switchAuthMode = (mode: 'signin' | 'signup' | 'forgot') => {
+    setAuthMode(mode);
     setError('');
     setSuccess('');
     setFormData({
       name: '',
-      email: '',
+      email: formData.email,
       password: '',
       confirmPassword: ''
     });
   };
+
+  const isForgotMode = authMode === 'forgot';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -97,39 +113,43 @@ const LoginScreen: React.FC = () => {
         </div>
 
         {/* Auth Mode Toggle */}
-        <div className="flex bg-gray-100 rounded-xl p-1 mb-6 shadow-inner">
-          <button
-            onClick={() => setAuthMode('signin')}
-            className={`flex-1 flex items-center justify-center py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-300 ${
-              authMode === 'signin'
-                ? 'bg-white text-blue-600 shadow-md transform scale-105'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <LogIn className="w-4 h-4 mr-2" />
-            Sign In
-          </button>
-          <button
-            onClick={() => setAuthMode('signup')}
-            className={`flex-1 flex items-center justify-center py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-300 ${
-              authMode === 'signup'
-                ? 'bg-white text-blue-600 shadow-md transform scale-105'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Sign Up
-          </button>
-        </div>
+        {!isForgotMode && (
+          <div className="flex bg-gray-100 rounded-xl p-1 mb-6 shadow-inner">
+            <button
+              onClick={() => switchAuthMode('signin')}
+              className={`flex-1 flex items-center justify-center py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                authMode === 'signin'
+                  ? 'bg-white text-blue-600 shadow-md transform scale-105'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <LogIn className="w-4 h-4 mr-2" />
+              Sign In
+            </button>
+            <button
+              onClick={() => switchAuthMode('signup')}
+              className={`flex-1 flex items-center justify-center py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                authMode === 'signup'
+                  ? 'bg-white text-blue-600 shadow-md transform scale-105'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Sign Up
+            </button>
+          </div>
+        )}
 
         {/* Login Form */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
-              {authMode === 'signin' ? 'Welcome Back!' : 'Create Account'}
+              {isForgotMode ? 'Reset Password' : authMode === 'signin' ? 'Welcome Back!' : 'Create Account'}
             </h2>
             <p className="text-gray-600 mt-2">
-              {authMode === 'signin' 
+              {isForgotMode
+                ? 'Enter your email to receive a reset link'
+                : authMode === 'signin' 
                 ? 'Sign in to access your business dashboard' 
                 : 'Start managing your business professionally'
               }
@@ -140,7 +160,11 @@ const LoginScreen: React.FC = () => {
           {success && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
               <p className="text-green-600 text-sm flex items-center">
-                <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                {isForgotMode ? (
+                  <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                ) : (
+                  <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin mr-2 flex-shrink-0"></div>
+                )}
                 {success}
               </p>
             </div>
@@ -187,28 +211,30 @@ const LoginScreen: React.FC = () => {
                 </div>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                <div className="relative">
-                  <Lock className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={formData.password}
-                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder={authMode === 'signup' ? 'Create a password (min 6 characters)' : 'Enter your password'}
-                    minLength={authMode === 'signup' ? 6 : undefined}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
+              {!isForgotMode && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                  <div className="relative">
+                    <Lock className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={formData.password}
+                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                      className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      placeholder={authMode === 'signup' ? 'Create a password (min 6 characters)' : 'Enter your password'}
+                      minLength={authMode === 'signup' ? 6 : undefined}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {authMode === 'signup' && (
                 <div>
@@ -243,48 +269,63 @@ const LoginScreen: React.FC = () => {
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    {authMode === 'signin' ? 'Sign In' : 'Create Account'}
+                    {isForgotMode ? 'Send Reset Link' : authMode === 'signin' ? 'Sign In' : 'Create Account'}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}
               </button>
           </form>
 
-          {/* Switch Auth Mode */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              {authMode === 'signin' ? "Don't have an account?" : "Already have an account?"}
-              <button
-                onClick={switchAuthMode}
-                className="ml-2 text-blue-600 hover:text-blue-800 font-semibold underline transition-colors duration-200"
-              >
-                {authMode === 'signin' ? 'Sign up here' : 'Sign in here'}
-              </button>
-            </p>
+          {/* Links */}
+          <div className="mt-6 space-y-3 text-center">
+            {isForgotMode ? (
+              <p className="text-sm text-gray-600">
+                Remember your password?
+                <button
+                  onClick={() => switchAuthMode('signin')}
+                  className="ml-2 text-blue-600 hover:text-blue-800 font-semibold underline transition-colors duration-200"
+                >
+                  Back to Sign In
+                </button>
+              </p>
+            ) : (
+              <>
+                <div>
+                  <p className="text-sm text-gray-600">
+                    {authMode === 'signin' ? "Don't have an account?" : "Already have an account?"}
+                    <button
+                      onClick={() => switchAuthMode(authMode === 'signin' ? 'signup' : 'signin')}
+                      className="ml-2 text-blue-600 hover:text-blue-800 font-semibold underline transition-colors duration-200"
+                    >
+                      {authMode === 'signin' ? 'Sign up here' : 'Sign in here'}
+                    </button>
+                  </p>
+                </div>
+                {authMode === 'signin' && (
+                  <div>
+                    <button
+                      onClick={() => switchAuthMode('forgot')}
+                      className="text-sm text-gray-500 hover:text-blue-600 font-medium flex items-center justify-center transition-colors duration-200"
+                    >
+                      <KeyRound className="w-4 h-4 mr-1" />
+                      Forgot Password?
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
-          {/* Production Info */}
+          {/* Info Box */}
           <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
             <div className="text-center">
-              <h4 className="text-sm font-semibold text-green-800 mb-2">🔒 Secure & Professional</h4>
+              <h4 className="text-sm font-semibold text-green-800 mb-2">Secure & Professional</h4>
               <div className="space-y-1 text-xs text-green-700">
                 <p><strong>Data Security:</strong> Your business data is completely private</p>
                 <p><strong>User Isolation:</strong> Each account has separate, secure data</p>
                 <p><strong>Professional Grade:</strong> Built for serious business management</p>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8">
-          <p className="text-sm text-gray-600">
-            Trusted by Businesses Worldwide
-          </p>
-          <div className="flex items-center justify-center mt-2 space-x-4 text-xs text-gray-500">
-            <span>🔒 Secure</span>
-            <span>📊 Professional</span>
-            <span>🚀 Reliable</span>
           </div>
         </div>
       </div>
