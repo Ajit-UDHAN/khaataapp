@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Product, Customer, Invoice, Expense, ExpenseCategory } from '../types';
+import { Product, Customer, Invoice, Expense, ExpenseCategory, ProductVariant } from '../types';
 import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
+import { sampleExpenseCategories as defaultExpenseCategories } from '../utils/sampleData';
 
 interface AppContextType {
   products: Product[];
@@ -10,6 +11,7 @@ interface AppContextType {
   setCustomers: (customers: Customer[] | ((prev: Customer[]) => Customer[])) => void;
   invoices: Invoice[];
   setInvoices: (invoices: Invoice[] | ((prev: Invoice[]) => Invoice[])) => void;
+  deleteInvoice: (id: string) => void;
   expenses: Expense[];
   setExpenses: (expenses: Expense[] | ((prev: Expense[]) => Expense[])) => void;
   expenseCategories: ExpenseCategory[];
@@ -34,11 +36,11 @@ interface AppProviderProps {
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const { user } = useAuth();
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+  const [products, setProductsState] = useState<Product[]>([]);
+  const [customers, setCustomersState] = useState<Customer[]>([]);
+  const [invoices, setInvoicesState] = useState<Invoice[]>([]);
+  const [expenses, setExpensesState] = useState<Expense[]>([]);
+  const [expenseCategories] = useState<ExpenseCategory[]>(defaultExpenseCategories);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   useEffect(() => {
@@ -47,50 +49,52 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     const loadData = async () => {
       setIsLoadingData(true);
       try {
-        // Load products
+        // Load products (variants stored as jsonb array)
         const { data: productsData } = await supabase
           .from('products')
-          .select('*, product_variants(*)')
-          .eq('user_id', user.id);
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
         if (productsData) {
           const mappedProducts: Product[] = productsData.map((p: any) => ({
             id: p.id,
             name: p.name,
-            description: p.description,
-            variants: p.product_variants.map((v: any) => ({
-              id: v.id,
-              packSize: v.pack_size,
-              unitPrice: parseFloat(v.unit_price),
-              stockQuantity: v.stock_quantity,
-              lowStockThreshold: v.low_stock_threshold
-            }))
+            category: p.category,
+            brand: p.brand,
+            variants: (p.variants || []) as ProductVariant[],
+            createdAt: p.created_at,
+            updatedAt: p.updated_at
           }));
-          setProducts(mappedProducts);
+          setProductsState(mappedProducts);
         }
 
         // Load customers
         const { data: customersData } = await supabase
           .from('customers')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
         if (customersData) {
           const mappedCustomers: Customer[] = customersData.map((c: any) => ({
             id: c.id,
             name: c.name,
             phone: c.phone,
-            email: c.email,
-            creditLimit: parseFloat(c.credit_limit),
-            creditUsed: parseFloat(c.credit_used)
+            address: c.address || '',
+            notes: c.notes || '',
+            creditBalance: parseFloat(c.credit_balance) || 0,
+            totalPurchases: parseFloat(c.total_purchases) || 0,
+            lastVisit: c.last_visit || new Date().toISOString(),
+            createdAt: c.created_at
           }));
-          setCustomers(mappedCustomers);
+          setCustomersState(mappedCustomers);
         }
 
-        // Load invoices
+        // Load invoices (items stored as jsonb array)
         const { data: invoicesData } = await supabase
           .from('invoices')
-          .select('*, invoice_items(*)')
+          .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
@@ -98,60 +102,46 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
           const mappedInvoices: Invoice[] = invoicesData.map((i: any) => ({
             id: i.id,
             invoiceNumber: i.invoice_number,
-            customerId: i.customer_id,
+            customerId: i.customer_id || '',
             customerName: i.customer_name,
-            subtotal: parseFloat(i.subtotal),
-            discountPercentage: i.discount_percentage,
-            discountAmount: parseFloat(i.discount_amount),
-            taxPercentage: i.tax_percentage,
-            taxAmount: parseFloat(i.tax_amount),
-            grandTotal: parseFloat(i.grand_total),
-            status: i.status,
-            items: i.invoice_items.map((it: any) => ({
-              id: it.id,
-              productVariantId: it.product_variant_id,
-              productName: it.product_name,
-              packSize: it.pack_size,
-              quantity: it.quantity,
-              unitPrice: parseFloat(it.unit_price),
-              totalPrice: parseFloat(it.total_price)
-            })),
-            notes: i.notes,
+            items: i.items || [],
+            subtotal: parseFloat(i.subtotal) || 0,
+            tax: parseFloat(i.tax) || 0,
+            discount: parseFloat(i.discount) || 0,
+            grandTotal: parseFloat(i.grand_total) || 0,
+            paymentType: i.payment_type || 'cash',
+            amountPaid: parseFloat(i.amount_paid) || 0,
+            balanceDue: parseFloat(i.balance_due) || 0,
+            status: i.status || 'paid',
+            notes: i.notes || '',
             createdAt: i.created_at
           }));
-          setInvoices(mappedInvoices);
-        }
-
-        // Load expense categories
-        const { data: categoriesData } = await supabase
-          .from('expense_categories')
-          .select('*')
-          .eq('user_id', user.id);
-
-        if (categoriesData) {
-          const mappedCategories: ExpenseCategory[] = categoriesData.map((c: any) => ({
-            id: c.id,
-            name: c.name,
-            color: c.color
-          }));
-          setExpenseCategories(mappedCategories);
+          setInvoicesState(mappedInvoices);
         }
 
         // Load expenses
         const { data: expensesData } = await supabase
           .from('expenses')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .order('date', { ascending: false });
 
         if (expensesData) {
           const mappedExpenses: Expense[] = expensesData.map((e: any) => ({
             id: e.id,
-            categoryId: e.category_id,
-            description: e.description,
-            amount: parseFloat(e.amount),
-            date: e.date
+            title: e.title,
+            description: e.description || '',
+            category: e.category,
+            amount: parseFloat(e.amount) || 0,
+            paymentMethod: e.payment_method || 'cash',
+            date: e.date,
+            receipt: e.receipt || '',
+            vendor: e.vendor || '',
+            notes: e.notes || '',
+            createdAt: e.created_at,
+            updatedAt: e.updated_at
           }));
-          setExpenses(mappedExpenses);
+          setExpensesState(mappedExpenses);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -163,6 +153,135 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     loadData();
   }, [user]);
 
+  const setProducts = (value: Product[] | ((prev: Product[]) => Product[])) => {
+    setProductsState(prev => {
+      const next = typeof value === 'function' ? (value as (p: Product[]) => Product[])(prev) : value;
+      if (user) {
+        next.forEach(p => {
+          supabase
+            .from('products')
+            .upsert({
+              id: p.id,
+              user_id: user.id,
+              name: p.name,
+              category: p.category,
+              brand: p.brand,
+              variants: p.variants,
+              updated_at: new Date().toISOString()
+            })
+            .then(({ error }) => {
+              if (error) console.error('Error saving product:', error);
+            });
+        });
+      }
+      return next;
+    });
+  };
+
+  const setCustomers = (value: Customer[] | ((prev: Customer[]) => Customer[])) => {
+    setCustomersState(prev => {
+      const next = typeof value === 'function' ? (value as (c: Customer[]) => Customer[])(prev) : value;
+      if (user) {
+        next.forEach(c => {
+          supabase
+            .from('customers')
+            .upsert({
+              id: c.id,
+              user_id: user.id,
+              name: c.name,
+              phone: c.phone,
+              address: c.address,
+              notes: c.notes,
+              credit_balance: c.creditBalance,
+              total_purchases: c.totalPurchases,
+              last_visit: c.lastVisit
+            })
+            .then(({ error }) => {
+              if (error) console.error('Error saving customer:', error);
+            });
+        });
+      }
+      return next;
+    });
+  };
+
+  const setInvoices = (value: Invoice[] | ((prev: Invoice[]) => Invoice[])) => {
+    setInvoicesState(prev => {
+      const next = typeof value === 'function' ? (value as (i: Invoice[]) => Invoice[])(prev) : value;
+      if (user) {
+        next.forEach(i => {
+          supabase
+            .from('invoices')
+            .upsert({
+              id: i.id,
+              user_id: user.id,
+              invoice_number: i.invoiceNumber,
+              customer_id: i.customerId,
+              customer_name: i.customerName,
+              items: i.items,
+              subtotal: i.subtotal,
+              tax: i.tax,
+              discount: i.discount,
+              grand_total: i.grandTotal,
+              payment_type: i.paymentType,
+              amount_paid: i.amountPaid,
+              balance_due: i.balanceDue,
+              status: i.status,
+              notes: i.notes
+            })
+            .then(({ error }) => {
+              if (error) console.error('Error saving invoice:', error);
+            });
+        });
+      }
+      return next;
+    });
+  };
+
+  const deleteInvoice = (id: string) => {
+    setInvoicesState(prev => prev.filter(i => i.id !== id));
+    if (user) {
+      supabase
+        .from('invoices')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .then(({ error }) => {
+          if (error) console.error('Error deleting invoice:', error);
+        });
+    }
+  };
+
+  const setExpenses = (value: Expense[] | ((prev: Expense[]) => Expense[])) => {
+    setExpensesState(prev => {
+      const next = typeof value === 'function' ? (value as (e: Expense[]) => Expense[])(prev) : value;
+      if (user) {
+        next.forEach(e => {
+          supabase
+            .from('expenses')
+            .upsert({
+              id: e.id,
+              user_id: user.id,
+              title: e.title,
+              description: e.description,
+              category: e.category,
+              amount: e.amount,
+              payment_method: e.paymentMethod,
+              date: e.date,
+              receipt: e.receipt,
+              vendor: e.vendor,
+              notes: e.notes,
+              updated_at: new Date().toISOString()
+            })
+            .then(({ error }) => {
+              if (error) console.error('Error saving expense:', error);
+            });
+        });
+      }
+      return next;
+    });
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -172,10 +291,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         setCustomers,
         invoices,
         setInvoices,
+        deleteInvoice,
         expenses,
         setExpenses,
         expenseCategories,
-        setExpenseCategories,
+        setExpenseCategories: () => {},
         isLoadingData,
       }}
     >

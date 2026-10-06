@@ -25,6 +25,18 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+const mapProfile = (p: any): BusinessProfile => ({
+  id: p.id,
+  userId: p.user_id,
+  shopName: p.shop_name,
+  gstNumber: p.gst_number || '',
+  businessAddress: p.business_address,
+  contactNumber: p.contact_number,
+  shopLogo: p.shop_logo || '',
+  createdAt: p.created_at,
+  updatedAt: p.updated_at
+});
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
@@ -39,12 +51,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const userData: User = {
             id: session.user.id,
             email: session.user.email || '',
-            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+            name: (session.user.user_metadata as any)?.name || session.user.email?.split('@')[0] || 'User',
             createdAt: session.user.created_at || new Date().toISOString()
           };
           setUser(userData);
 
-          // Load business profile from database
           const { data: profile } = await supabase
             .from('business_profiles')
             .select('*')
@@ -52,19 +63,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             .maybeSingle();
 
           if (profile) {
-            setBusinessProfile({
-              id: profile.id,
-              userId: profile.user_id,
-              businessName: profile.business_name,
-              ownerName: profile.owner_name,
-              email: profile.email,
-              phone: profile.phone,
-              address: profile.address,
-              city: profile.city,
-              gstNumber: profile.gst_number,
-              createdAt: profile.created_at,
-              updatedAt: profile.updated_at
-            });
+            setBusinessProfile(mapProfile(profile));
           }
         }
       } catch (error) {
@@ -75,15 +74,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     initializeAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      (async () => {
+        if (session?.user) {
+          const userData: User = {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: (session.user.user_metadata as any)?.name || session.user.email?.split('@')[0] || 'User',
+            createdAt: session.user.created_at || new Date().toISOString()
+          };
+          setUser(userData);
+
+          const { data: profile } = await supabase
+            .from('business_profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          if (profile) {
+            setBusinessProfile(mapProfile(profile));
+          } else {
+            setBusinessProfile(null);
+          }
+        } else {
+          setUser(null);
+          setBusinessProfile(null);
+        }
+        setIsLoading(false);
+      })();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string, name?: string) => {
     setIsLoading(true);
     try {
-      let session;
-
       if (name) {
-        // Sign up
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -92,47 +122,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         });
         if (error) throw error;
-        session = data.session;
+
+        if (data.session?.user) {
+          const userData: User = {
+            id: data.session.user.id,
+            email: data.session.user.email || '',
+            name: (data.session.user.user_metadata as any)?.name || email.split('@')[0],
+            createdAt: data.session.user.created_at || new Date().toISOString()
+          };
+          setUser(userData);
+        }
       } else {
-        // Sign in
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
         });
         if (error) throw error;
-        session = data.session;
-      }
 
-      if (session?.user) {
-        const userData: User = {
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.name || email.split('@')[0],
-          createdAt: session.user.created_at || new Date().toISOString()
-        };
-        setUser(userData);
+        if (data.session?.user) {
+          const userData: User = {
+            id: data.session.user.id,
+            email: data.session.user.email || '',
+            name: (data.session.user.user_metadata as any)?.name || email.split('@')[0],
+            createdAt: data.session.user.created_at || new Date().toISOString()
+          };
+          setUser(userData);
 
-        // Load existing business profile
-        const { data: profile } = await supabase
-          .from('business_profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
+          const { data: profile } = await supabase
+            .from('business_profiles')
+            .select('*')
+            .eq('user_id', data.session.user.id)
+            .maybeSingle();
 
-        if (profile) {
-          setBusinessProfile({
-            id: profile.id,
-            userId: profile.user_id,
-            businessName: profile.business_name,
-            ownerName: profile.owner_name,
-            email: profile.email,
-            phone: profile.phone,
-            address: profile.address,
-            city: profile.city,
-            gstNumber: profile.gst_number,
-            createdAt: profile.created_at,
-            updatedAt: profile.updated_at
-          });
+          if (profile) {
+            setBusinessProfile(mapProfile(profile));
+          }
         }
       }
     } catch (error) {
@@ -160,13 +184,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .from('business_profiles')
         .upsert({
           user_id: user.id,
-          business_name: profileData.businessName,
-          owner_name: profileData.ownerName,
-          email: profileData.email,
-          phone: profileData.phone,
-          address: profileData.address,
-          city: profileData.city,
+          shop_name: profileData.shopName,
           gst_number: profileData.gstNumber,
+          business_address: profileData.businessAddress,
+          contact_number: profileData.contactNumber,
+          shop_logo: profileData.shopLogo,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id'
@@ -177,20 +199,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error) throw error;
 
       if (data) {
-        const profile: BusinessProfile = {
-          id: data.id,
-          userId: data.user_id,
-          businessName: data.business_name,
-          ownerName: data.owner_name,
-          email: data.email,
-          phone: data.phone,
-          address: data.address,
-          city: data.city,
-          gstNumber: data.gst_number,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at
-        };
-        setBusinessProfile(profile);
+        setBusinessProfile(mapProfile(data));
       }
     } catch (error) {
       console.error('Update business profile error:', error);

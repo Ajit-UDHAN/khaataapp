@@ -54,11 +54,20 @@ const LoginScreen: React.FC = () => {
       } else {
         await login(formData.email, formData.password);
       }
-    } catch (err) {
+    } catch (err: any) {
+      const message = err?.message || '';
       if (authMode === 'signup') {
-        setError('Email already exists. Please sign in instead.');
+        if (message.toLowerCase().includes('already') || message.toLowerCase().includes('registered')) {
+          setError('This email is already registered. Please sign in instead.');
+        } else {
+          setError(message || 'Unable to create account. Please try again.');
+        }
       } else {
-        setError('Invalid email or password. Please check your credentials.');
+        if (message.toLowerCase().includes('invalid')) {
+          setError('Invalid email or password. If you don\'t have an account, please sign up first.');
+        } else {
+          setError(message || 'Unable to sign in. Please check your credentials.');
+        }
       }
     }
   };
