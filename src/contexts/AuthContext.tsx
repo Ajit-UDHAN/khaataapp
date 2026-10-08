@@ -44,6 +44,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     const initializeAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -55,7 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             name: (session.user.user_metadata as any)?.name || session.user.email?.split('@')[0] || 'User',
             createdAt: session.user.created_at || new Date().toISOString()
           };
-          setUser(userData);
+          if (mounted) setUser(userData);
 
           const { data: profile } = await supabase
             .from('business_profiles')
@@ -63,14 +65,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             .eq('user_id', session.user.id)
             .maybeSingle();
 
-          if (profile) {
-            setBusinessProfile(mapProfile(profile));
+          if (mounted) {
+            if (profile) {
+              setBusinessProfile(mapProfile(profile));
+            }
+            setIsLoading(false);
           }
+        } else {
+          if (mounted) setIsLoading(false);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-      } finally {
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       }
     };
 
@@ -85,7 +91,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             name: (session.user.user_metadata as any)?.name || session.user.email?.split('@')[0] || 'User',
             createdAt: session.user.created_at || new Date().toISOString()
           };
-          setUser(userData);
+          if (mounted) {
+            setUser(userData);
+            setIsLoading(true);
+          }
 
           const { data: profile } = await supabase
             .from('business_profiles')
@@ -93,20 +102,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             .eq('user_id', session.user.id)
             .maybeSingle();
 
-          if (profile) {
-            setBusinessProfile(mapProfile(profile));
-          } else {
-            setBusinessProfile(null);
+          if (mounted) {
+            if (profile) {
+              setBusinessProfile(mapProfile(profile));
+            } else {
+              setBusinessProfile(null);
+            }
+            setIsLoading(false);
           }
         } else {
-          setUser(null);
-          setBusinessProfile(null);
+          if (mounted) {
+            setUser(null);
+            setBusinessProfile(null);
+            setIsLoading(false);
+          }
         }
-        setIsLoading(false);
       })();
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -124,75 +139,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
         if (error) throw error;
 
-        // If no session returned, the email likely already exists
-        // or email confirmation is required. Fall back to sign-in.
+        // If no session returned, the email likely already exists.
+        // Fall back to sign-in with the provided credentials.
         if (!data.session?.user) {
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          const { error: signInError } = await supabase.auth.signInWithPassword({
             email,
             password
           });
           if (signInError) {
             throw new Error('This email is already registered but the password doesn\'t match. If you forgot your password, use the "Forgot Password" link.');
           }
-          if (signInData.session?.user) {
-            const userData: User = {
-              id: signInData.session.user.id,
-              email: signInData.session.user.email || '',
-              name: (signInData.session.user.user_metadata as any)?.name || email.split('@')[0],
-              createdAt: signInData.session.user.created_at || new Date().toISOString()
-            };
-            setUser(userData);
-
-            const { data: profile } = await supabase
-              .from('business_profiles')
-              .select('*')
-              .eq('user_id', signInData.session.user.id)
-              .maybeSingle();
-
-            if (profile) {
-              setBusinessProfile(mapProfile(profile));
-            }
-          }
-        } else {
-          const userData: User = {
-            id: data.session.user.id,
-            email: data.session.user.email || '',
-            name: (data.session.user.user_metadata as any)?.name || email.split('@')[0],
-            createdAt: data.session.user.created_at || new Date().toISOString()
-          };
-          setUser(userData);
         }
+        // onAuthStateChange will set the user and load the business profile
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
           email,
           password
         });
         if (error) throw error;
-
-        if (data.session?.user) {
-          const userData: User = {
-            id: data.session.user.id,
-            email: data.session.user.email || '',
-            name: (data.session.user.user_metadata as any)?.name || email.split('@')[0],
-            createdAt: data.session.user.created_at || new Date().toISOString()
-          };
-          setUser(userData);
-
-          const { data: profile } = await supabase
-            .from('business_profiles')
-            .select('*')
-            .eq('user_id', data.session.user.id)
-            .maybeSingle();
-
-          if (profile) {
-            setBusinessProfile(mapProfile(profile));
-          }
-        }
+        // onAuthStateChange will set the user and load the business profile
       }
     } catch (error) {
-      throw error;
-    } finally {
       setIsLoading(false);
+      throw error;
     }
   };
 
