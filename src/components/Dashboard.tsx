@@ -44,14 +44,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
       value: formatCurrency(stats.todaySales),
       icon: TrendingUp,
       color: 'bg-green-500',
-      change: '+12.5%'
+
     },
     {
       title: 'Today\'s Expenses',
       value: formatCurrency(todayExpenseTotal),
       icon: TrendingDown,
       color: 'bg-red-500',
-      change: '+5.2%',
       action: () => onViewChange('expenses')
     },
     {
@@ -59,14 +58,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
       value: formatCurrency(stats.monthlySales),
       icon: BarChart3,
       color: 'bg-blue-500',
-      change: '+8.2%'
+
     },
     {
       title: 'Monthly Expenses',
       value: formatCurrency(monthExpenseTotal),
       icon: CreditCard,
       color: 'bg-orange-500',
-      change: '+3.1%',
       action: () => onViewChange('expenses')
     },
     {
@@ -172,13 +170,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                   <div className={`${card.color} p-4 rounded-xl shadow-lg`}>
                     <Icon className="w-7 h-7 text-white" />
                   </div>
-                  {card.change && (
-                    <span className={`text-sm font-semibold px-3 py-1 rounded-full ${
-                      card.change.startsWith('+') 
-                        ? 'text-green-700 bg-green-100' 
-                        : 'text-red-700 bg-red-100'
-                    }`}>{card.change}</span>
-                  )}
                 </div>
                 <h3 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">{card.title}</h3>
                 <p className="text-3xl font-bold text-gray-900">{card.value}</p>
@@ -272,11 +263,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
                   <div className={`${card.color} p-3 rounded-lg`}>
                     <Icon className="w-5 h-5 text-white" />
                   </div>
-                  {card.change && (
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                      card.change.startsWith('+') ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
-                    }`}>{card.change}</span>
-                  )}
                 </div>
                 <h3 className="text-sm font-medium text-gray-600 mb-1">{card.title}</h3>
                 <p className="text-xl font-bold text-gray-900">{card.value}</p>
