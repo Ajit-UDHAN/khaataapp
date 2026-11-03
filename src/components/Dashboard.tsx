@@ -1,23 +1,11 @@
 import React from 'react';
 import { 
-  TrendingUp, 
-  Users, 
-  Package, 
-  AlertTriangle,
-  IndianRupee,
-  Receipt,
-  UserPlus,
-  BarChart3,
-  CreditCard,
-  TrendingDown,
-  ShoppingCart,
-  Calendar,
-  Target,
-  Award,
-  Activity
+  TrendingUp, Users, Package, AlertTriangle, IndianRupee, Receipt,
+  UserPlus, BarChart3, CreditCard, TrendingDown, ShoppingCart, Calendar,
+  Target, Award, Activity, ArrowRight, Zap
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
-import { calculateDashboardStats, formatCurrency, formatNumber } from '../utils/calculations';
+import { calculateDashboardStats, formatCurrency } from '../utils/calculations';
 
 interface DashboardProps {
   onViewChange: (view: string) => void;
@@ -27,374 +15,264 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
   const { products, customers, invoices, expenses } = useApp();
   const stats = calculateDashboardStats(invoices, products, customers);
 
-  // Calculate expense stats
   const today = new Date();
   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   
-  const todayExpenses = expenses.filter(exp => new Date(exp.date) >= todayStart);
-  const monthExpenses = expenses.filter(exp => new Date(exp.date) >= monthStart);
-  
-  const todayExpenseTotal = todayExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-  const monthExpenseTotal = monthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const todayExpenseTotal = expenses.filter(e => new Date(e.date) >= todayStart).reduce((s, e) => s + e.amount, 0);
+  const monthExpenseTotal = expenses.filter(e => new Date(e.date) >= monthStart).reduce((s, e) => s + e.amount, 0);
+  const todayProfit = stats.todaySales - todayExpenseTotal;
+  const monthProfit = stats.monthlySales - monthExpenseTotal;
 
-  const summaryCards = [
-    {
-      title: 'Today\'s Sales',
-      value: formatCurrency(stats.todaySales),
-      icon: TrendingUp,
-      color: 'bg-green-500',
+  const keyMetrics = [
+    { title: "Today's Sales", value: formatCurrency(stats.todaySales), icon: TrendingUp, sub: 'Live sales today' },
+    { title: "Today's Expenses", value: formatCurrency(todayExpenseTotal), icon: TrendingDown, sub: 'Spent today', action: () => onViewChange('expenses') },
+    { title: "Monthly Sales", value: formatCurrency(stats.monthlySales), icon: BarChart3, sub: 'This month so far' },
+    { title: "Monthly Expenses", value: formatCurrency(monthExpenseTotal), icon: CreditCard, sub: 'Spent this month', action: () => onViewChange('expenses') },
+  ];
 
-    },
-    {
-      title: 'Today\'s Expenses',
-      value: formatCurrency(todayExpenseTotal),
-      icon: TrendingDown,
-      color: 'bg-red-500',
-      action: () => onViewChange('expenses')
-    },
-    {
-      title: 'Monthly Sales',
-      value: formatCurrency(stats.monthlySales),
-      icon: BarChart3,
-      color: 'bg-blue-500',
-
-    },
-    {
-      title: 'Monthly Expenses',
-      value: formatCurrency(monthExpenseTotal),
-      icon: CreditCard,
-      color: 'bg-orange-500',
-      action: () => onViewChange('expenses')
-    },
-    {
-      title: 'Credit Pending',
-      value: formatCurrency(stats.creditPending),
-      icon: IndianRupee,
-      color: 'bg-orange-500',
-      action: () => onViewChange('customers')
-    },
-    {
-      title: 'Low Stock Products',
-      value: stats.lowStockCount.toString(),
-      icon: AlertTriangle,
-      color: 'bg-red-500',
-      action: () => onViewChange('products')
-    },
-    {
-      title: 'Total Products',
-      value: stats.totalProducts.toString(),
-      icon: Package,
-      color: 'bg-purple-500',
-      action: () => onViewChange('products')
-    },
-    {
-      title: 'Total Customers',
-      value: customers.length.toString(),
-      icon: Users,
-      color: 'bg-indigo-500',
-      action: () => onViewChange('customers')
-    },
-    {
-      title: 'New Customers (7d)',
-      value: stats.newCustomersWeek.toString(),
-      icon: UserPlus,
-      color: 'bg-teal-500'
-    },
-    {
-      title: 'Yearly Revenue',
-      value: formatCurrency(stats.yearlyRevenue),
-      icon: Receipt,
-      color: 'bg-pink-500'
-    }
+  const secondaryMetrics = [
+    { title: 'Credit Pending', value: formatCurrency(stats.creditPending), icon: IndianRupee, action: () => onViewChange('customers') },
+    { title: 'Low Stock', value: stats.lowStockCount.toString(), icon: AlertTriangle, action: () => onViewChange('products') },
+    { title: 'Products', value: stats.totalProducts.toString(), icon: Package, action: () => onViewChange('products') },
+    { title: 'Customers', value: customers.length.toString(), icon: Users, action: () => onViewChange('customers') },
+    { title: 'New Customers', value: stats.newCustomersWeek.toString(), icon: UserPlus, sub: 'Last 7 days' },
+    { title: 'Yearly Revenue', value: formatCurrency(stats.yearlyRevenue), icon: Receipt },
   ];
 
   const quickActions = [
-    { id: 'billing', title: 'New Bill', color: 'bg-blue-600 hover:bg-blue-700' },
-    { id: 'add-product', title: 'Add Product', color: 'bg-green-600 hover:bg-green-700' },
-    { id: 'expenses', title: 'Add Expense', color: 'bg-red-600 hover:bg-red-700' },
-    { id: 'invoices', title: 'Search Invoice', color: 'bg-purple-600 hover:bg-purple-700' },
+    { id: 'billing', title: 'New Bill', desc: 'Create invoice', icon: ShoppingCart },
+    { id: 'add-product', title: 'Add Product', desc: 'New inventory item', icon: Package },
+    { id: 'expenses', title: 'Add Expense', desc: 'Record spending', icon: CreditCard },
+    { id: 'invoices', title: 'Search Invoice', desc: 'Find past bills', icon: Receipt },
   ];
 
-  const recentInvoices = invoices
+  const recentInvoices = [...invoices]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
+    .slice(0, 6);
 
   const lowStockProducts = products
-    .flatMap(product => 
-      product.variants
-        .filter(variant => variant.stockQuantity <= variant.lowStockThreshold)
-        .map(variant => ({ ...variant, productName: product.name }))
-    )
+    .flatMap(p => p.variants.filter(v => v.stockQuantity <= v.lowStockThreshold).map(v => ({ ...v, productName: p.name })))
     .slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <div className="p-4 lg:p-8 max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                Dashboard
-              </h1>
-              <p className="text-gray-600 text-lg">Welcome back! Here's your business overview for today.</p>
-            </div>
-            <div className="hidden md:flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm text-gray-500">Today</p>
-                <p className="text-lg font-semibold text-gray-900">{new Date().toLocaleDateString('en-IN', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}</p>
-              </div>
-            </div>
-          </div>
+    <div className="p-4 lg:p-8 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
+          <p className="text-gray-500 mt-1">{today.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
+        <button onClick={() => onViewChange('billing')}
+          className="hidden sm:flex items-center gap-2 bg-gray-900 text-white px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-800 transition-all shadow-sm hover:shadow-md">
+          <Plus className="w-4 h-4" />
+          New Bill
+        </button>
+      </div>
 
-        {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {summaryCards.slice(0, 4).map((card, index) => {
-            const Icon = card.icon;
-            return (
-              <div
-                key={index}
-                className={`bg-white rounded-2xl shadow-lg p-6 border-0 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${
-                  card.action ? 'cursor-pointer' : ''
-                }`}
-                onClick={card.action}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`${card.color} p-4 rounded-xl shadow-lg`}>
-                    <Icon className="w-7 h-7 text-white" />
-                  </div>
+      {/* Key Metrics */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {keyMetrics.map((m, i) => {
+          const Icon = m.icon;
+          return (
+            <div key={i}
+              className={`premium-card p-5 ${m.action ? 'cursor-pointer' : ''}`}
+              onClick={m.action}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <Icon className="w-[18px] h-[18px] text-gray-600" />
                 </div>
-                <h3 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">{card.title}</h3>
-                <p className="text-3xl font-bold text-gray-900">{card.value}</p>
+                <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{m.title}</span>
               </div>
-            );
-          })}
-        </div>
-
-        {/* Profit/Loss Summary */}
-        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-2xl p-8 text-white mb-8 shadow-2xl">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2 flex items-center">
-                <img src="/KHA.jpg" alt="KHAATA" className="w-8 h-8 rounded mr-3" />
-                Financial Overview
-              </h2>
-              <p className="text-blue-100">Track your business performance</p>
+              <p className="text-2xl font-bold text-gray-900 tracking-tight">{m.value}</p>
+              {m.sub && <p className="text-xs text-gray-400 mt-1">{m.sub}</p>}
             </div>
-            <div className="bg-white bg-opacity-20 p-3 rounded-xl">
-              <Activity className="w-8 h-8 text-white" />
+          );
+        })}
+      </div>
+
+      {/* Profit/Loss Overview */}
+      <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl p-6 lg:p-8 text-white mb-6 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl"></div>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Activity className="w-5 h-5 text-gray-400" />
+              <h2 className="text-lg font-semibold">Financial Overview</h2>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center bg-white bg-opacity-10 rounded-xl p-6 backdrop-blur-sm">
-              <div className="flex items-center justify-center mb-3">
-                <Target className="w-6 h-6 text-green-300 mr-2" />
-                <p className="text-blue-100 font-medium">Today's Profit/Loss</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white/5 rounded-xl p-5 backdrop-blur-sm border border-white/5">
+              <div className="flex items-center gap-2 mb-3">
+                <Target className="w-4 h-4 text-gray-400" />
+                <span className="text-sm text-gray-400">Today's Profit/Loss</span>
               </div>
-              <p className={`text-3xl font-bold ${
-                (stats.todaySales - todayExpenseTotal) >= 0 ? 'text-green-300' : 'text-red-300'
-              }`}>
-                {formatCurrency(stats.todaySales - todayExpenseTotal)}
+              <p className={`text-2xl font-bold tracking-tight ${todayProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {formatCurrency(todayProfit)}
               </p>
             </div>
-            <div className="text-center bg-white bg-opacity-10 rounded-xl p-6 backdrop-blur-sm">
-              <div className="flex items-center justify-center mb-3">
-                <Calendar className="w-6 h-6 text-blue-300 mr-2" />
-                <p className="text-blue-100 font-medium">Monthly Profit/Loss</p>
+            <div className="bg-white/5 rounded-xl p-5 backdrop-blur-sm border border-white/5">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="w-4 h-4 text-gray-400" />
+                <span className="text-sm text-gray-400">Monthly Profit/Loss</span>
               </div>
-              <p className={`text-3xl font-bold ${
-                (stats.monthlySales - monthExpenseTotal) >= 0 ? 'text-green-300' : 'text-red-300'
-              }`}>
-                {formatCurrency(stats.monthlySales - monthExpenseTotal)}
+              <p className={`text-2xl font-bold tracking-tight ${monthProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {formatCurrency(monthProfit)}
               </p>
             </div>
-            <div className="text-center bg-white bg-opacity-10 rounded-xl p-6 backdrop-blur-sm">
-              <div className="flex items-center justify-center mb-3">
-                <BarChart3 className="w-6 h-6 text-yellow-300 mr-2" />
-                <p className="text-blue-100 font-medium">Expense Ratio</p>
+            <div className="bg-white/5 rounded-xl p-5 backdrop-blur-sm border border-white/5">
+              <div className="flex items-center gap-2 mb-3">
+                <BarChart3 className="w-4 h-4 text-gray-400" />
+                <span className="text-sm text-gray-400">Expense Ratio</span>
               </div>
-              <p className="text-3xl font-bold text-yellow-300">
+              <p className="text-2xl font-bold text-yellow-400 tracking-tight">
                 {stats.monthlySales > 0 ? ((monthExpenseTotal / stats.monthlySales) * 100).toFixed(1) : 0}%
               </p>
             </div>
           </div>
         </div>
-
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-            <ShoppingCart className="w-6 h-6 mr-3 text-blue-600" />
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action) => (
-              <button
-                key={action.id}
-                onClick={() => onViewChange(action.id)}
-                className={`${action.color} text-white p-6 rounded-2xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-2 hover:scale-105`}
-              >
-                <div className="text-lg">{action.title}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Additional Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {summaryCards.slice(4).map((card, index) => {
-            const Icon = card.icon;
-            return (
-              <div
-                key={index + 4}
-                className={`bg-white rounded-xl shadow-md p-6 border-l-4 hover:shadow-lg transition-all duration-200 ${
-                  card.action ? 'cursor-pointer' : ''
-                }`}
-                onClick={card.action}
-                style={{ borderLeftColor: card.color.replace('bg-', '').replace('-500', '') }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`${card.color} p-3 rounded-lg`}>
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-                <h3 className="text-sm font-medium text-gray-600 mb-1">{card.title}</h3>
-                <p className="text-xl font-bold text-gray-900">{card.value}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Recent Invoices */}
-          <div className="bg-white rounded-2xl shadow-lg border-0">
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                  <Receipt className="w-5 h-5 mr-2 text-blue-600" />
-                  Recent Invoices
-                </h2>
-                <button
-                  onClick={() => onViewChange('invoices')}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-semibold px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors duration-200"
-                >
-                  View All
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              {recentInvoices.length === 0 ? (
-                <div className="text-center py-8">
-                  <Receipt className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">No invoices yet</p>
-                  <p className="text-gray-400 text-sm">Create your first invoice to get started</p>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {recentInvoices.map((invoice) => (
-                    <div key={invoice.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg hover:shadow-md transition-all duration-200">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 text-sm truncate">{invoice.customerName}</p>
-                        <p className="text-xs text-gray-600">{invoice.invoiceNumber}</p>
-                      </div>
-                      <div className="text-right ml-2">
-                        <p className="font-bold text-gray-900 text-sm">{formatCurrency(invoice.grandTotal)}</p>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                          invoice.status === 'paid'
-                            ? 'bg-green-100 text-green-800'
-                            : invoice.status === 'credit'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {invoice.status.toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Low Stock Alert */}
-          <div className="bg-white rounded-2xl shadow-lg border-0">
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                  <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
-                  Low Stock Alert
-                </h2>
-                <button
-                  onClick={() => onViewChange('products')}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-semibold px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors duration-200"
-                >
-                  Manage Stock
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              {lowStockProducts.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Package className="w-6 h-6 text-green-600" />
-                  </div>
-                  <p className="text-green-600 font-semibold text-sm">All products well stocked!</p>
-                  <p className="text-gray-400 text-xs">Great inventory management</p>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {lowStockProducts.map((product) => (
-                    <div key={product.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border-l-4 border-red-400 hover:shadow-md transition-all duration-200">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 text-sm truncate">{product.productName}</p>
-                        <p className="text-xs text-gray-600">{product.packSize}</p>
-                      </div>
-                      <div className="text-right ml-2">
-                        <p className="font-bold text-red-600 text-sm">{product.stockQuantity} left</p>
-                        <p className="text-xs text-gray-500">Min: {product.lowStockThreshold}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Top Selling Product */}
-        {stats.topSellingProduct !== 'N/A' && (
-          <div className="mt-8 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 rounded-2xl p-8 text-white shadow-2xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="bg-white bg-opacity-20 p-4 rounded-xl mr-6">
-                  <Award className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold mb-2 flex items-center">
-                    🏆 Top Selling Product
-                  </h2>
-                  <p className="text-2xl font-bold">{stats.topSellingProduct}</p>
-                  <p className="text-orange-100 text-lg">Keep it well stocked!</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <button
-                  onClick={() => onViewChange('reports')}
-                  className="bg-white bg-opacity-20 hover:bg-opacity-30 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:shadow-lg backdrop-blur-sm"
-                >
-                  View Reports
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {quickActions.map((a) => {
+          const Icon = a.icon;
+          return (
+            <button key={a.id} onClick={() => onViewChange(a.id)}
+              className="premium-card p-5 text-left group">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-900 group-hover:text-white transition-all duration-200">
+                  <Icon className="w-[18px] h-[18px] text-gray-600 group-hover:text-white" />
+                </div>
+                <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-gray-900 transition-colors" />
+              </div>
+              <p className="font-semibold text-gray-900 text-sm">{a.title}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{a.desc}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Secondary Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        {secondaryMetrics.map((m, i) => {
+          const Icon = m.icon;
+          return (
+            <div key={i}
+              className={`premium-card p-4 ${m.action ? 'cursor-pointer' : ''}`}
+              onClick={m.action}>
+              <Icon className="w-4 h-4 text-gray-400 mb-2" />
+              <p className="text-lg font-bold text-gray-900 tracking-tight">{m.value}</p>
+              <p className="text-[11px] text-gray-400 mt-0.5">{m.title}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Recent + Low Stock */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        {/* Recent Invoices */}
+        <div className="premium-card">
+          <div className="flex items-center justify-between p-5 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-900">Recent Invoices</h2>
+            <button onClick={() => onViewChange('invoices')}
+              className="text-sm text-gray-500 hover:text-gray-900 font-medium transition-colors">
+              View All
+            </button>
+          </div>
+          <div className="p-5">
+            {recentInvoices.length === 0 ? (
+              <div className="text-center py-10">
+                <Receipt className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+                <p className="text-gray-400 text-sm">No invoices yet</p>
+                <button onClick={() => onViewChange('billing')}
+                  className="mt-3 text-sm text-gray-900 font-semibold hover:text-blue-600 transition-colors">
+                  Create your first invoice
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {recentInvoices.map((inv) => (
+                  <div key={inv.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 text-sm truncate">{inv.customerName}</p>
+                      <p className="text-xs text-gray-400">{inv.invoiceNumber}</p>
+                    </div>
+                    <div className="text-right ml-2 flex-shrink-0">
+                      <p className="font-semibold text-gray-900 text-sm">{formatCurrency(inv.grandTotal)}</p>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                        inv.status === 'paid' ? 'bg-green-50 text-green-700'
+                          : inv.status === 'credit' ? 'bg-red-50 text-red-700'
+                          : 'bg-amber-50 text-amber-700'
+                      }`}>
+                        {inv.status.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Low Stock */}
+        <div className="premium-card">
+          <div className="flex items-center justify-between p-5 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-900">Low Stock Alert</h2>
+            <button onClick={() => onViewChange('products')}
+              className="text-sm text-gray-500 hover:text-gray-900 font-medium transition-colors">
+              Manage
+            </button>
+          </div>
+          <div className="p-5">
+            {lowStockProducts.length === 0 ? (
+              <div className="text-center py-10">
+                <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Package className="w-5 h-5 text-green-600" />
+                </div>
+                <p className="text-green-600 font-medium text-sm">All products well stocked</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {lowStockProducts.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-red-50/50 border border-red-100/50">
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 text-sm truncate">{p.productName}</p>
+                      <p className="text-xs text-gray-400">{p.packSize}</p>
+                    </div>
+                    <div className="text-right ml-2 flex-shrink-0">
+                      <p className="font-bold text-red-600 text-sm">{p.stockQuantity} left</p>
+                      <p className="text-[10px] text-gray-400">Min: {p.lowStockThreshold}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Top Selling */}
+      {stats.topSellingProduct !== 'N/A' && (
+        <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-6 text-white shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <Award className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-amber-100 text-sm font-medium mb-1">Top Selling Product</p>
+                <p className="text-xl font-bold">{stats.topSellingProduct}</p>
+              </div>
+            </div>
+            <button onClick={() => onViewChange('reports')}
+              className="bg-white/15 hover:bg-white/25 px-4 py-2.5 rounded-xl text-sm font-semibold backdrop-blur-sm transition-all">
+              View Reports
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

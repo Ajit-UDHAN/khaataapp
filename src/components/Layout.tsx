@@ -1,17 +1,7 @@
 import React, { useState } from 'react';
 import { 
-  Home, 
-  Package, 
-  Receipt, 
-  Users, 
-  BarChart3, 
-  Menu, 
-  X,
-  ShoppingCart,
-  Plus,
-  CreditCard,
-  Settings,
-  LogOut
+  Home, Package, Receipt, Users, BarChart3, Menu, X,
+  ShoppingCart, CreditCard, Settings, LogOut, Plus
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -27,8 +17,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
 
   const navigation = [
     { id: 'dashboard', name: 'Dashboard', icon: Home },
-    { id: 'products', name: 'Products', icon: Package },
     { id: 'billing', name: 'New Bill', icon: ShoppingCart },
+    { id: 'products', name: 'Products', icon: Package },
     { id: 'invoices', name: 'Invoices', icon: Receipt },
     { id: 'customers', name: 'Customers', icon: Users },
     { id: 'expenses', name: 'Expenses', icon: CreditCard },
@@ -36,148 +26,91 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onViewChange }) 
     { id: 'settings', name: 'Settings', icon: Settings },
   ];
 
-  const quickActions = [
-    { id: 'billing', name: 'New Bill', icon: Plus, color: 'bg-blue-600 hover:bg-blue-700' },
-    { id: 'add-product', name: 'Add Product', icon: Package, color: 'bg-green-600 hover:bg-green-700' },
-    { id: 'expenses', name: 'Add Expense', icon: CreditCard, color: 'bg-red-600 hover:bg-red-700' },
-  ];
-
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 z-40 bg-black/30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-xl border-r border-gray-100 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+        fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex flex-col transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="flex items-center justify-between h-20 px-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-          <div>
-           <div className="flex items-center">
-             <img src="/KHA.jpg" alt="KHAATA" className="w-8 h-8 rounded-lg mr-3" />
-             <div>
-               <h1 className="text-xl font-bold">{businessProfile?.shopName || 'KHAATA'}</h1>
-               <p className="text-xs text-blue-100">Business Management</p>
-             </div>
-           </div>
-            <p className="text-xs text-blue-100">{user?.name || 'Business Management'}</p>
+        {/* Brand */}
+        <div className="flex items-center justify-between h-16 px-5 border-b border-gray-100">
+          <div className="flex items-center gap-2.5">
+            <img src="/KHA.jpg" alt="KHAATA" className="w-8 h-8 rounded-lg" />
+            <div>
+              <h1 className="text-base font-bold text-gray-900 tracking-tight leading-none">{businessProfile?.shopName || 'KHAATA'}</h1>
+              <p className="text-[11px] text-gray-400 mt-0.5">{user?.name}</p>
+            </div>
           </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-2 rounded-lg hover:bg-blue-700/50 transition-colors duration-200"
-          >
+          <button onClick={() => setSidebarOpen(false)}
+            className="lg:hidden p-1.5 rounded-lg text-gray-400 hover:bg-gray-100">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <nav className="mt-6 flex-1 overflow-y-auto">
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onViewChange(item.id);
-                  setSidebarOpen(false);
-                }}
-                className={`
-                  w-full flex items-center px-6 py-4 text-left transition-all duration-200 group
-                  ${currentView === item.id 
-                    ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-r-4 border-blue-600 shadow-sm' 
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                  }
-                `}
-              >
-                <Icon className={`w-5 h-5 mr-4 transition-colors duration-200 ${
-                  currentView === item.id ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'
-                }`} />
-                <span className="font-medium">{item.name}</span>
-              </button>
-            );
-          })}
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <p className="px-3 mb-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Menu</p>
+          <div className="space-y-0.5">
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              const active = currentView === item.id;
+              return (
+                <button key={item.id}
+                  onClick={() => { onViewChange(item.id); setSidebarOpen(false); }}
+                  className={`w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150
+                    ${active
+                      ? 'bg-gray-900 text-white shadow-sm'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}>
+                  <Icon className={`w-[18px] h-[18px] mr-3 ${active ? 'text-white' : 'text-gray-400'}`} />
+                  {item.name}
+                </button>
+              );
+            })}
+          </div>
         </nav>
 
-        <div className="mt-auto p-4 space-y-4 bg-white border-t border-gray-100">
-          {/* User Profile */}
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                  {user?.name?.charAt(0).toUpperCase() || 'U'}
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
-                  <p className="text-xs text-gray-600">{user?.email}</p>
-                </div>
+        {/* User */}
+        <div className="border-t border-gray-100 p-3">
+          <div className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors">
+            <div className="flex items-center min-w-0">
+              <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                {user?.name?.charAt(0).toUpperCase() || 'U'}
               </div>
-              <button
-                onClick={logout}
-                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                title="Logout"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
+              <div className="ml-2.5 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">{user?.name}</p>
+                <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+              </div>
             </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 lg:block hidden">
-            <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
-              <Plus className="w-4 h-4 mr-2" />
-              Quick Actions
-            </h3>
-            <div className="space-y-2">
-              {quickActions.map((action) => {
-                const Icon = action.icon;
-                return (
-                  <button
-                    key={action.id}
-                    onClick={() => {
-                      onViewChange(action.id);
-                      setSidebarOpen(false);
-                    }}
-                    className={`
-                      w-full flex items-center px-3 py-2.5 text-sm text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5
-                      ${action.color}
-                    `}
-                  >
-                    <Icon className="w-4 h-4 mr-2" />
-                    {action.name}
-                  </button>
-                );
-              })}
-            </div>
+            <button onClick={logout}
+              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+              title="Logout">
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col">
+      {/* Main */}
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile header */}
-        <header className="lg:hidden flex items-center justify-between h-16 px-4 bg-white shadow-sm border-b border-gray-100 relative z-30">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors duration-200"
-          >
-            <Menu className="w-6 h-6" />
+        <header className="lg:hidden flex items-center justify-between h-14 px-4 bg-white border-b border-gray-100">
+          <button onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100">
+            <Menu className="w-5 h-5" />
           </button>
-          <div className="text-center">
-           <div className="flex items-center">
-             <img src="/KHA.jpg" alt="KHAATA" className="w-6 h-6 rounded mr-2" />
-             <h1 className="text-lg font-bold text-gray-900">{businessProfile?.shopName || 'KHAATA'}</h1>
-           </div>
-            <p className="text-xs text-gray-500">{user?.name || 'Business Management'}</p>
+          <div className="flex items-center gap-2">
+            <img src="/KHA.jpg" alt="KHAATA" className="w-6 h-6 rounded" />
+            <span className="text-sm font-bold text-gray-900">{businessProfile?.shopName || 'KHAATA'}</span>
           </div>
-          <div className="w-10" /> {/* Spacer */}
+          <div className="w-9" />
         </header>
 
-        {/* Page content */}
         <main className="flex-1 overflow-auto bg-gray-50">
           {children}
         </main>
